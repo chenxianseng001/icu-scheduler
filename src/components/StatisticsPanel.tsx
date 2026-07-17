@@ -12,7 +12,7 @@ export function StatisticsPanel({ state }: StatisticsPanelProps) {
   const [dateTo, setDateTo] = useState(today);
 
   const stats = useMemo(
-    () => computeStats(state.doctors, state.schedule, state.archives, dateFrom, dateTo),
+    () => computeStats(state.doctors, state.schedule, state.weekStart, state.archives, dateFrom, dateTo),
     [state, dateFrom, dateTo]
   );
 

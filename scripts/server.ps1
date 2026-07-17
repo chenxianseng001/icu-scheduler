@@ -37,8 +37,13 @@ while ($listener.IsListening) {
         $reader = New-Object System.IO.StreamReader($request.InputStream, [Text.Encoding]::UTF8)
         $body = $reader.ReadToEnd()
         $reader.Close()
-        [IO.File]::WriteAllText($dataFile, $body, [Text.Encoding]::UTF8)
-        $response.StatusCode = 200
+        try {
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            [IO.File]::WriteAllText($dataFile, $body, $utf8NoBom)
+            $response.StatusCode = 200
+        } catch {
+            $response.StatusCode = 500
+        }
         $response.Close()
         continue
     }

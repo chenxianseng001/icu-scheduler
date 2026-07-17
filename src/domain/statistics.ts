@@ -44,12 +44,13 @@ function dedupeDoctors(allDoctors: Doctor[]): Doctor[] {
 export function computeStats(
   currentDoctors: V2AppState["doctors"],
   currentSchedule: V2AppState["schedule"],
+  currentWeekStart: string,
   archives: WeekArchive[],
   dateFrom: string,
   dateTo: string
 ): DoctorStats[] {
   const filteredArchives = archives.filter(
-    (a) => a.weekStart >= dateFrom && a.weekStart <= dateTo
+    (a) => a.weekStart >= dateFrom && a.weekStart <= dateTo && a.weekStart !== currentWeekStart
   );
 
   // Collect all doctors that ever appear in the selected range
