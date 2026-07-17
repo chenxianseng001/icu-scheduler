@@ -48,6 +48,16 @@ function hadSaturdayNight(doctorId: string, previousWeek?: WeekArchive): boolean
     sat.extraNight.includes(doctorId);
 }
 
+function hadWeekendShift(doctorId: string, previousWeek: WeekArchive): boolean {
+  for (const dayIndex of [5, 6]) {
+    const day = previousWeek.schedule.days[dayIndex];
+    if (!day) continue;
+    if (Object.values(day.assignments).some((v) => v === doctorId)) return true;
+    if (day.extraDay.includes(doctorId) || day.extraNight.includes(doctorId)) return true;
+  }
+  return false;
+}
+
 const SCHEDULER_TIMEOUT_MS = 15000;
 
 export function generateSchedule(
@@ -142,37 +152,58 @@ export function generateSchedule(
 
   function getCandidates(dayIndex: number, shiftKey: ShiftKey) {
     const isNightShift = isNight(shiftKey);
+    const isWeekend = dayIndex >= 5; // Saturday=5, Sunday=6
 
-    return doctors
-      .filter((doctor) => canAssign(doctor, dayIndex, shiftKey))
-      .sort((left, right) => {
-        const leftCounts = counts.get(left.id)!;
-        const rightCounts = counts.get(right.id)!;
+    let candidates = doctors.filter((doctor) => canAssign(doctor, dayIndex, shiftKey));
 
-        // Preference matching: prioritize doctors who prefer this shift type
-        const leftPref = left.preference;
-        const rightPref = right.preference;
-        const leftMatchesPref = (isNightShift && leftPref === "1白2夜") || (!isNightShift && leftPref === "2白1夜");
-        const rightMatchesPref = (isNightShift && rightPref === "1白2夜") || (!isNightShift && rightPref === "2白1夜");
-        if (leftMatchesPref !== rightMatchesPref) {
-          return leftMatchesPref ? -1 : 1;
-        }
-
-        // Fairness: fewer total shifts first
-        if (leftCounts.total !== rightCounts.total) {
-          return leftCounts.total - rightCounts.total;
-        }
-
-        // Fewer same-kind shifts first
-        const leftSameKind = isNightShift ? leftCounts.night : leftCounts.day;
-        const rightSameKind = isNightShift ? rightCounts.night : rightCounts.day;
-        if (leftSameKind !== rightSameKind) {
-          return leftSameKind - rightSameKind;
-        }
-
-        // Stable sort
-        return left.name.localeCompare(right.name) || left.id.localeCompare(right.id);
+    // For day shifts: try to avoid assigning day shifts to doctors who already have 2 night shifts,
+    // but only if there are other viable candidates
+    if (!isNightShift) {
+      const withoutTwoNights = candidates.filter((d) => {
+        const c = counts.get(d.id)!;
+        return c.night < 2;
       });
+      if (withoutTwoNights.length > 0) {
+        candidates = withoutTwoNights;
+      }
+    }
+
+    return candidates.sort((left, right) => {
+      const leftCounts = counts.get(left.id)!;
+      const rightCounts = counts.get(right.id)!;
+
+      // Weekend rotation: deprioritize doctors who worked weekend last week
+      if (isWeekend && previousWeek) {
+        const leftHadWeekend = hadWeekendShift(left.id, previousWeek);
+        const rightHadWeekend = hadWeekendShift(right.id, previousWeek);
+        if (leftHadWeekend !== rightHadWeekend) {
+          return leftHadWeekend ? 1 : -1;
+        }
+      }
+
+      // Preference matching
+      const leftPref = left.preference;
+      const rightPref = right.preference;
+      const leftMatchesPref = (isNightShift && leftPref === "1白2夜") || (!isNightShift && leftPref === "2白1夜");
+      const rightMatchesPref = (isNightShift && rightPref === "1白2夜") || (!isNightShift && rightPref === "2白1夜");
+      if (leftMatchesPref !== rightMatchesPref) {
+        return leftMatchesPref ? -1 : 1;
+      }
+
+      // Fairness: fewer total shifts first
+      if (leftCounts.total !== rightCounts.total) {
+        return leftCounts.total - rightCounts.total;
+      }
+
+      // Fewer same-kind shifts first
+      const leftSameKind = isNightShift ? leftCounts.night : leftCounts.day;
+      const rightSameKind = isNightShift ? rightCounts.night : rightCounts.day;
+      if (leftSameKind !== rightSameKind) {
+        return leftSameKind - rightSameKind;
+      }
+
+      return left.name.localeCompare(right.name) || left.id.localeCompare(right.id);
+    });
   }
 
   function assign(doctor: Doctor, dayIndex: number, shiftKey: ShiftKey) {
