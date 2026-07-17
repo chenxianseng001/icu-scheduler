@@ -58,6 +58,14 @@ function hadWeekendShift(doctorId: string, previousWeek: WeekArchive): boolean {
   return false;
 }
 
+function prevNightTier(doctorId: string, previousWeek: WeekArchive): "night1" | "night2" | null {
+  for (const day of previousWeek.schedule.days) {
+    if (day.assignments.night1 === doctorId) return "night1";
+    if (day.assignments.night2 === doctorId) return "night2";
+  }
+  return null;
+}
+
 const SCHEDULER_TIMEOUT_MS = 15000;
 
 export function generateSchedule(
@@ -156,8 +164,7 @@ export function generateSchedule(
 
     let candidates = doctors.filter((doctor) => canAssign(doctor, dayIndex, shiftKey));
 
-    // For day shifts: try to avoid assigning day shifts to doctors who already have 2 night shifts,
-    // but only if there are other viable candidates
+    // For day shifts: heavily prefer doctors with 0 nights, avoid those with 2 nights
     if (!isNightShift) {
       const withoutTwoNights = candidates.filter((d) => {
         const c = counts.get(d.id)!;
@@ -178,6 +185,26 @@ export function generateSchedule(
         const rightHadWeekend = hadWeekendShift(right.id, previousWeek);
         if (leftHadWeekend !== rightHadWeekend) {
           return leftHadWeekend ? 1 : -1;
+        }
+      }
+
+      // Night tier fairness: balance night1/night2
+      if (isNightShift && shiftKey === "night2") {
+        // Prefer doctors who already have night1 (balanced)
+        const leftHasNight1 = leftCounts.night > 0;
+        const rightHasNight1 = rightCounts.night > 0;
+        if (leftHasNight1 !== rightHasNight1) return leftHasNight1 ? -1 : 1;
+      }
+      if (isNightShift && shiftKey === "night1") {
+        // Prefer doctors who don't have night2 yet
+        // (night2 hasn't been assigned yet for most positions, so this is a cross-week concern)
+        if (previousWeek) {
+          const leftPrevTier = prevNightTier(left.id, previousWeek);
+          const rightPrevTier = prevNightTier(right.id, previousWeek);
+          // If someone had night1 last week, prefer them for night2 this week (not night1 again)
+          const leftPrefer = leftPrevTier === "night1" ? 1 : 0;
+          const rightPrefer = rightPrevTier === "night1" ? 1 : 0;
+          if (leftPrefer !== rightPrefer) return leftPrefer - rightPrefer;
         }
       }
 
