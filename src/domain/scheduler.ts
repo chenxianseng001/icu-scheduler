@@ -26,16 +26,22 @@ function getCounts(doctors: Doctor[]) {
 export function generateSchedule(doctors: Doctor[]): SchedulerResult {
   const schedule = createEmptySchedule();
   const counts = getCounts(doctors);
+  const requiredAssignments = schedule.days.length * shiftOrder.length;
 
   const maximumAssignments = doctors.reduce((total, doctor) => {
     return total + (doctor.kind === "normal" ? 3 : doctor.targetDayShifts ?? 0);
   }, 0);
 
-  if (maximumAssignments < schedule.days.length * shiftOrder.length) {
+  if (maximumAssignments < requiredAssignments) {
     return {
       ok: false,
-      issues: validateSchedule(schedule, doctors, { requireFilledPositions: true }),
-      message: "无法在当前医生和限制条件下生成合法排班"
+      issues: [
+        {
+          type: "insufficientCapacity",
+          message: `医生总排班容量不足：最多可安排 ${maximumAssignments} 班，需安排 ${requiredAssignments} 班`
+        }
+      ],
+      message: "医生总排班容量不足，无法生成合法排班"
     };
   }
 
@@ -120,9 +126,45 @@ export function generateSchedule(doctors: Doctor[]): SchedulerResult {
     });
   }
 
+  function hasForwardFeasibility(position: number) {
+    for (let remainingPosition = position; remainingPosition < requiredAssignments; remainingPosition += 1) {
+      const dayIndex = Math.floor(remainingPosition / shiftOrder.length);
+      const shiftKey = shiftOrder[remainingPosition % shiftOrder.length];
+      if (schedule.days[dayIndex].assignments[shiftKey] === null && getCandidates(dayIndex, shiftKey).length === 0) {
+        return false;
+      }
+    }
+
+    return doctors.every((doctor) => {
+      if (doctor.kind !== "dayOnly" || typeof doctor.targetDayShifts !== "number") {
+        return true;
+      }
+
+      const remainingTarget = doctor.targetDayShifts - counts.get(doctor.id)!.day;
+      if (remainingTarget < 0) {
+        return false;
+      }
+
+      const remainingDayIndices = new Set<number>();
+      for (let remainingPosition = position; remainingPosition < requiredAssignments; remainingPosition += 1) {
+        const dayIndex = Math.floor(remainingPosition / shiftOrder.length);
+        const shiftKey = shiftOrder[remainingPosition % shiftOrder.length];
+        if (!isNightShift(shiftKey) && canAssign(doctor, dayIndex, shiftKey)) {
+          remainingDayIndices.add(dayIndex);
+        }
+      }
+
+      return remainingDayIndices.size >= remainingTarget;
+    });
+  }
+
   function search(position: number): boolean {
-    if (position === schedule.days.length * shiftOrder.length) {
+    if (position === requiredAssignments) {
       return targetsMet() && validateSchedule(schedule, doctors, { requireFilledPositions: true }).length === 0;
+    }
+
+    if (!hasForwardFeasibility(position)) {
+      return false;
     }
 
     const dayIndex = Math.floor(position / shiftOrder.length);
@@ -145,7 +187,12 @@ export function generateSchedule(doctors: Doctor[]): SchedulerResult {
 
   return {
     ok: false,
-    issues: validateSchedule(createEmptySchedule(), doctors, { requireFilledPositions: true }),
-    message: "无法在当前医生和限制条件下生成合法排班"
+    issues: [
+      {
+        type: "unsatisfiableConstraints",
+        message: "现有可用日期、夜班后休息及班次限制无法满足全部排班需求"
+      }
+    ],
+    message: "现有约束无法满足全部排班需求"
   };
 }

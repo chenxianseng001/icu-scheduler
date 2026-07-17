@@ -33,7 +33,9 @@ export type ScheduleIssueType =
   | "nightRecoveryConflict"
   | "normalDoctorOverLimit"
   | "dayOnlyDoctorOnNight"
-  | "dayOnlyTargetNotMet";
+  | "dayOnlyTargetNotMet"
+  | "insufficientCapacity"
+  | "unsatisfiableConstraints";
 
 export interface ScheduleIssue {
   type: ScheduleIssueType;
