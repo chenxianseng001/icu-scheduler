@@ -72,6 +72,8 @@ export type ScheduleIssueType =
   | "normalDoctorOverLimit"
   | "dayOnlyDoctorOnNight"
   | "dayOnlyTargetNotMet"
+  | "nightOnlyTargetNotMet"
+  | "imbalancedNightTiers"
   | "insufficientCapacity"
   | "unsatisfiableConstraints";
 

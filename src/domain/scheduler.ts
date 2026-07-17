@@ -6,8 +6,13 @@ export type SchedulerResult =
   | { ok: false; issues: ScheduleIssue[]; message: string };
 
 const shiftOrder: ShiftKey[] = ["night1", "night2", "day1", "day2"];
+const altShiftOrder: ShiftKey[] = ["night2", "night1", "day1", "day2"];
 const dayShiftKeys: ShiftKey[] = ["day1", "day2"];
 const nightShiftKeys: ShiftKey[] = ["night1", "night2"];
+
+function getDayOrder(dayIndex: number): ShiftKey[] {
+  return dayIndex % 2 === 0 ? shiftOrder : altShiftOrder;
+}
 
 interface DoctorShiftCounts {
   day: number;
@@ -338,8 +343,8 @@ export function generateSchedule(
 
   function hasForwardFeasibility(position: number) {
     for (let remainingPosition = position; remainingPosition < requiredAssignments; remainingPosition += 1) {
-      const dayIndex = Math.floor(remainingPosition / shiftOrder.length);
-      const shiftKey = shiftOrder[remainingPosition % shiftOrder.length];
+      const dayIndex = Math.floor(remainingPosition / 4);
+      const shiftKey = getDayOrder(dayIndex)[remainingPosition % 4];
       if (schedule.days[dayIndex].assignments[shiftKey] === null && getCandidates(dayIndex, shiftKey).length === 0) {
         return false;
       }
@@ -351,8 +356,8 @@ export function generateSchedule(
       if (remainingTarget < 0) return false;
       const remainingDayIndices = new Set<number>();
       for (let rp = position; rp < requiredAssignments; rp++) {
-        const dIdx = Math.floor(rp / shiftOrder.length);
-        const sk = shiftOrder[rp % shiftOrder.length];
+        const dIdx = Math.floor(rp / 4);
+        const sk = getDayOrder(dIdx)[rp % 4];
         if (!isNight(sk) && canAssign(doctor, dIdx, sk)) remainingDayIndices.add(dIdx);
       }
       return remainingDayIndices.size >= remainingTarget;
@@ -368,8 +373,8 @@ export function generateSchedule(
 
     if (!hasForwardFeasibility(position)) return false;
 
-    const dayIndex = Math.floor(position / shiftOrder.length);
-    const shiftKey = shiftOrder[position % shiftOrder.length];
+    const dayIndex = Math.floor(position / 4);
+    const shiftKey = getDayOrder(dayIndex)[position % 4];
 
     for (const doctor of getCandidates(dayIndex, shiftKey)) {
       assign(doctor, dayIndex, shiftKey);

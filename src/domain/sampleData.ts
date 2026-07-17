@@ -17,6 +17,6 @@ export const sampleDoctors: Doctor[] = [
   { id: "qu", name: "瞿医生", kind: "normal", unavailableDays: [], ...def },
   { id: "yin", name: "尹医生", kind: "normal", unavailableDays: [], ...def },
   { id: "zhu", name: "朱医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "zhong", name: "钟医生", kind: "dayOnly", targetDayShifts: 2, unavailableDays: [], ...def },
-  { id: "yang", name: "杨医生", kind: "nightOnly", targetNightShifts: 2, unavailableDays: [], ...def }
+  { id: "zhong", name: "钟医生", kind: "dayOnly", targetDayShifts: 3, unavailableDays: [], ...def },
+  { id: "yang", name: "杨医生", kind: "nightOnly", targetNightShifts: 1, unavailableDays: [], ...def }
 ];

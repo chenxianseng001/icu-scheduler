@@ -297,5 +297,37 @@ export function validateSchedule(
     }
   }
 
+  // H6: normal doctors with 2 night shifts must have one night1 + one night2
+  for (const doctor of doctors) {
+    if (doctor.kind !== "normal") continue;
+    const counts = getDoctorCounts(schedule, doctor.id);
+    if (counts.night < 2) continue;
+    let n1 = 0, n2 = 0;
+    for (const day of schedule.days) {
+      if (day.assignments.night1 === doctor.id) n1++;
+      if (day.assignments.night2 === doctor.id) n2++;
+    }
+    if (n1 >= 2 || n2 >= 2) {
+      issues.push({
+        type: "imbalancedNightTiers",
+        message: `${doctor.name} 两个夜班应为夜1+夜2，当前夜1×${n1} 夜2×${n2}`,
+        doctorId: doctor.id
+      });
+    }
+  }
+
+  // nightOnly target validation
+  for (const doctor of doctors) {
+    if (doctor.kind !== "nightOnly" || typeof doctor.targetNightShifts !== "number") continue;
+    const counts = getDoctorCounts(schedule, doctor.id);
+    if (counts.night !== doctor.targetNightShifts) {
+      issues.push({
+        type: "nightOnlyTargetNotMet",
+        message: `${doctor.name} 夜班目标为 ${doctor.targetNightShifts}，当前为 ${counts.night}`,
+        doctorId: doctor.id
+      });
+    }
+  }
+
   return issues;
 }
