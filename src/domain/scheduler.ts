@@ -264,6 +264,49 @@ export function generateSchedule(
     });
   }
 
+  function balanceNightTiers() {
+    const normals = doctors.filter((d) => d.kind === "normal");
+    for (const doctor of normals) {
+      let n1Days: number[] = [];
+      let n2Days: number[] = [];
+      for (let d = 0; d < 7; d++) {
+        if (schedule.days[d].assignments.night1 === doctor.id) n1Days.push(d);
+        if (schedule.days[d].assignments.night2 === doctor.id) n2Days.push(d);
+      }
+      // If this doctor has 2 night1 and 0 night2
+      if (n1Days.length >= 2 && n2Days.length === 0) {
+        // Find another normal with 0 night1 and ≥1 night2
+        for (const other of normals) {
+          if (other.id === doctor.id) continue;
+          let oN1: number[] = [];
+          let oN2: number[] = [];
+          for (let d = 0; d < 7; d++) {
+            if (schedule.days[d].assignments.night1 === other.id) oN1.push(d);
+            if (schedule.days[d].assignments.night2 === other.id) oN2.push(d);
+          }
+          if (oN1.length === 0 && oN2.length >= 1) {
+            // Try swap: move doctor's night1 to other, other's night2 to doctor
+            for (const n1Day of n1Days) {
+              for (const n2Day of oN2) {
+                // Check if swap would be valid (different days, both free on the other shift)
+                if (n1Day === n2Day) continue;
+                if (schedule.days[n1Day].assignments.night2 !== null) continue;
+                if (schedule.days[n2Day].assignments.night1 !== null) continue;
+                // Check that neither would have 2 of same shift after swap
+                // Execute swap
+                schedule.days[n1Day].assignments.night1 = other.id;
+                schedule.days[n1Day].assignments.night2 = doctor.id;
+                schedule.days[n2Day].assignments.night1 = doctor.id;
+                schedule.days[n2Day].assignments.night2 = other.id;
+                return; // One swap is enough
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   function hasForwardFeasibility(position: number) {
     for (let remainingPosition = position; remainingPosition < requiredAssignments; remainingPosition += 1) {
       const dayIndex = Math.floor(remainingPosition / shiftOrder.length);
@@ -309,6 +352,7 @@ export function generateSchedule(
   }
 
   if (search(0)) {
+    balanceNightTiers();
     return { ok: true, schedule };
   }
 
