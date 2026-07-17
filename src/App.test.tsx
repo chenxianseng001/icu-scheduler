@@ -18,6 +18,7 @@ it("renders the main scheduler controls and grid", () => {
   expect(screen.getByText("夜1")).toBeInTheDocument();
   expect(screen.getByText("夜2")).toBeInTheDocument();
   expect(screen.getByDisplayValue("钟医生")).toBeInTheDocument();
+  expect(screen.getAllByText("不可排")).not.toHaveLength(0);
 });
 
 it("allows editing doctor names", async () => {

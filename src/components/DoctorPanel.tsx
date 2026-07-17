@@ -92,20 +92,23 @@ function DoctorCard({
           </select>
         </label>
       ) : null}
-      <div className="unavailable-days" aria-label={`${doctor.name} 不可排日期`}>
-        {dayLabels.map((label, index) => {
-          const dayIndex = index as DayIndex;
-          return (
-            <label key={label}>
-              <input
-                type="checkbox"
-                checked={doctor.unavailableDays.includes(dayIndex)}
-                onChange={() => onToggleUnavailableDay(doctor.id, dayIndex)}
-              />
-              {label.replace("周", "")}
-            </label>
-          );
-        })}
+      <div className="unavailable-row">
+        <span className="unavailable-title">不可排</span>
+        <div className="unavailable-days" aria-label={`${doctor.name} 不可排日期`}>
+          {dayLabels.map((label, index) => {
+            const dayIndex = index as DayIndex;
+            return (
+              <label key={label}>
+                <input
+                  type="checkbox"
+                  checked={doctor.unavailableDays.includes(dayIndex)}
+                  onChange={() => onToggleUnavailableDay(doctor.id, dayIndex)}
+                />
+                {label.replace("周", "")}
+              </label>
+            );
+          })}
+        </div>
       </div>
     </article>
   );
