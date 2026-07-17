@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import "./App.css";
 import { DoctorPanel } from "./components/DoctorPanel";
@@ -11,23 +11,39 @@ import { Toolbar } from "./components/Toolbar";
 import { exportWorkbook } from "./domain/exportExcel";
 import { createEmptySchedule, validateSchedule } from "./domain/rules";
 import { generateSchedule } from "./domain/scheduler";
-import { loadState, saveState, archiveCurrentWeek } from "./domain/storage";
+import { loadState, saveState, archiveCurrentWeek, createDefaultState } from "./domain/storage";
 import type { DayIndex, Doctor, DoctorKind, ShiftKey, V2AppState } from "./domain/types";
 
 export default function App() {
-  const [state, setState] = useState<V2AppState>(() => loadState());
+  const [state, setState] = useState<V2AppState>(() => createDefaultState());
+  const [loading, setLoading] = useState(true);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [schedulerMessage, setSchedulerMessage] = useState<string | null>(null);
   const [activeDragDoctorId, setActiveDragDoctorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadState().then((s) => { setState(s); setLoading(false); });
+  }, []);
+
+  const loaded = useRef(false);
+  useEffect(() => {
+    if (loading) return;
+    if (!loaded.current) { loaded.current = true; return; }
+    saveState(state);
+  }, [state, loading]);
 
   const issues = useMemo(
     () => validateSchedule(state.schedule, state.doctors, { requireFilledPositions: true }),
     [state]
   );
 
-  useEffect(() => {
-    saveState(state);
-  }, [state]);
+  if (loading) {
+    return (
+      <main className="app-shell">
+        <p style={{ padding: 40, fontSize: 16, color: "#4e5f70" }}>加载中…</p>
+      </main>
+    );
+  }
 
   const updateDoctors = (updater: (doctors: Doctor[]) => Doctor[]) => {
     setSchedulerMessage(null);

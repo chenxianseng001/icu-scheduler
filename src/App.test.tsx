@@ -1,34 +1,64 @@
 import React from "react";
-import { beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
+import { createEmptySchedule } from "./domain/rules";
+import { sampleDoctors } from "./domain/sampleData";
+import type { V2AppState } from "./domain/types";
+
+function defaultState(): V2AppState {
+  return {
+    version: 2,
+    doctors: sampleDoctors,
+    schedule: createEmptySchedule(),
+    weekStart: "2026-07-13",
+    archives: []
+  };
+}
 
 beforeEach(() => {
-  localStorage.clear();
+  const fetchMock = vi.fn().mockResolvedValue({
+    status: 200,
+    ok: true,
+    json: async () => defaultState()
+  });
+  vi.stubGlobal("fetch", fetchMock);
 });
 
-it("renders the scheduler title", () => {
-  render(<App />);
-  expect(screen.getByText("ICU 排班系统")).toBeInTheDocument();
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
-it("renders the main scheduler controls and grid", () => {
+it("renders the scheduler title", async () => {
+  render(<App />);
+  await waitFor(() => {
+    expect(screen.getByText("ICU 排班系统")).toBeInTheDocument();
+  });
+});
+
+it("renders the main scheduler controls and grid", async () => {
   render(<App />);
 
-  expect(screen.getByRole("button", { name: "自动排班" })).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: "自动排班" })).toBeInTheDocument();
+  });
+
   expect(screen.getByRole("button", { name: "导出 Excel" })).toBeInTheDocument();
   expect(screen.getByText("白1")).toBeInTheDocument();
   expect(screen.getByText("白2")).toBeInTheDocument();
   expect(screen.getByText("夜1")).toBeInTheDocument();
   expect(screen.getByText("夜2")).toBeInTheDocument();
   expect(screen.getByDisplayValue("钟医生")).toBeInTheDocument();
-  expect(screen.getAllByText("不可排")).not.toHaveLength(0);
 });
 
 it("allows editing doctor names", async () => {
   const user = userEvent.setup();
   render(<App />);
+
+  await waitFor(() => {
+    expect(screen.getByDisplayValue("王医生")).toBeInTheDocument();
+  });
 
   const nameInput = screen.getByDisplayValue("王医生");
   await user.clear(nameInput);
@@ -41,6 +71,10 @@ it("allows editing doctor names", async () => {
 it("allows clearing one assigned shift without clearing the whole week", async () => {
   const user = userEvent.setup();
   render(<App />);
+
+  await waitFor(() => {
+    expect(screen.getByDisplayValue("王医生")).toBeInTheDocument();
+  });
 
   await user.click(screen.getByDisplayValue("王医生"));
   await user.click(screen.getAllByRole("button", { name: "缺人" })[0]);

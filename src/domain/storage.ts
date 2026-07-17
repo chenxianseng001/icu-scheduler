@@ -1,9 +1,6 @@
 import { createEmptySchedule } from "./rules";
 import { sampleDoctors } from "./sampleData";
-import type { AppState, Doctor, V2AppState, WeekArchive, WeeklySchedule } from "./types";
-
-const STORAGE_KEY_V2 = "icu-scheduler-state-v2";
-const STORAGE_KEY_V1 = "icu-scheduler-state-v1";
+import type { Doctor, V2AppState, WeekArchive } from "./types";
 
 function getMondayOfWeek(date: Date): string {
   const d = new Date(date);
@@ -20,7 +17,7 @@ function createDefaultDoctors(): Doctor[] {
   }));
 }
 
-function createDefaultState(): V2AppState {
+export function createDefaultState(): V2AppState {
   return {
     version: 2,
     doctors: createDefaultDoctors(),
@@ -30,12 +27,8 @@ function createDefaultState(): V2AppState {
   };
 }
 
-function getStorage() {
-  try {
-    return localStorage;
-  } catch {
-    return undefined;
-  }
+function cloneDoctor(doctor: Doctor): Doctor {
+  return { ...doctor, unavailableDays: [...doctor.unavailableDays] };
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -46,16 +39,16 @@ function isDoctor(value: unknown): value is Doctor {
   if (!isObject(value)) return false;
   if (typeof value.id !== "string" || typeof value.name !== "string" || typeof value.kind !== "string") return false;
   if (value.kind !== "normal" && value.kind !== "dayOnly") return false;
-  if (!Array.isArray(value.unavailableDays) || !value.unavailableDays.every((day) => Number.isInteger(day) && day >= 0 && day <= 6)) return false;
+  if (!Array.isArray(value.unavailableDays) || !value.unavailableDays.every((day: unknown) => typeof day === "number" && day >= 0 && day <= 6)) return false;
   if (value.kind === "dayOnly" && value.targetDayShifts !== undefined && value.targetDayShifts !== 2 && value.targetDayShifts !== 3) return false;
   return true;
 }
 
-function isSchedule(value: unknown): value is WeeklySchedule {
+function isSchedule(value: unknown): boolean {
   if (!isObject(value) || !Array.isArray(value.days) || value.days.length !== 7) return false;
-  return value.days.every((day, dayIndex) => {
-    if (!isObject(day) || day.dayIndex !== dayIndex || !isObject(day.assignments)) return false;
-    const assignments = day.assignments as Record<string, unknown>;
+  return (value.days as unknown[]).every((day: unknown, dayIndex: number) => {
+    if (!isObject(day) || (day as Record<string, unknown>).dayIndex !== dayIndex || !isObject((day as Record<string, unknown>).assignments)) return false;
+    const assignments = (day as Record<string, unknown>).assignments as Record<string, unknown>;
     return ["day1", "day2", "night1", "night2"].every((shiftKey) => {
       const assignment = assignments[shiftKey];
       return assignment === null || typeof assignment === "string";
@@ -63,19 +56,12 @@ function isSchedule(value: unknown): value is WeeklySchedule {
   });
 }
 
-function isV1State(value: unknown): value is AppState {
+function isArchive(value: unknown): boolean {
   if (!isObject(value)) return false;
-  if (!Array.isArray(value.doctors)) return false;
-  if (!isSchedule(value.schedule)) return false;
-  return value.doctors.every(isDoctor);
-}
-
-function isArchive(value: unknown): value is WeekArchive {
-  if (!isObject(value)) return false;
-  if (typeof value.weekStart !== "string") return false;
-  if (typeof value.archivedAt !== "string") return false;
-  if (!Array.isArray(value.doctors) || !value.doctors.every(isDoctor)) return false;
-  return isSchedule(value.schedule);
+  if (typeof (value as Record<string, unknown>).weekStart !== "string") return false;
+  if (typeof (value as Record<string, unknown>).archivedAt !== "string") return false;
+  if (!Array.isArray((value as Record<string, unknown>).doctors) || !((value as Record<string, unknown>).doctors as unknown[]).every(isDoctor)) return false;
+  return isSchedule((value as Record<string, unknown>).schedule);
 }
 
 function isValidV2State(value: unknown): value is V2AppState {
@@ -88,66 +74,31 @@ function isValidV2State(value: unknown): value is V2AppState {
   return true;
 }
 
-function migrateV1ToV2(v1State: AppState): V2AppState {
-  return {
-    version: 2,
-    doctors: v1State.doctors,
-    schedule: v1State.schedule,
-    weekStart: getMondayOfWeek(new Date()),
-    archives: []
-  };
-}
-
-function cloneDoctor(doctor: Doctor): Doctor {
-  return { ...doctor, unavailableDays: [...doctor.unavailableDays] };
-}
-
-export function loadState(): V2AppState {
-  const storage = getStorage();
-  if (!storage) return createDefaultState();
-
+export async function loadState(): Promise<V2AppState> {
   try {
-    const raw = storage.getItem(STORAGE_KEY_V2);
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw);
-      if (isValidV2State(parsed)) {
-        return {
-          ...parsed,
-          doctors: parsed.doctors.map(cloneDoctor)
-        };
-      }
+    const response = await fetch("/api/load");
+    if (response.status === 204) return createDefaultState();
+    if (!response.ok) return createDefaultState();
+    const parsed: unknown = await response.json();
+    if (isValidV2State(parsed)) {
+      return {
+        ...parsed,
+        doctors: parsed.doctors.map(cloneDoctor)
+      };
     }
+    return createDefaultState();
   } catch {
-    /* fall through to v1 */
+    return createDefaultState();
   }
-
-  try {
-    const raw = storage.getItem(STORAGE_KEY_V1);
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw);
-      if (isV1State(parsed)) {
-        const v2State = migrateV1ToV2(parsed);
-        try {
-          storage.setItem(STORAGE_KEY_V2, JSON.stringify(v2State));
-          storage.removeItem(STORAGE_KEY_V1);
-        } catch {
-          /* best effort */
-        }
-        return v2State;
-      }
-    }
-  } catch {
-    /* fall through to default */
-  }
-
-  return createDefaultState();
 }
 
-export function saveState(state: V2AppState): void {
-  const storage = getStorage();
-  if (!storage) return;
+export async function saveState(state: V2AppState): Promise<void> {
   try {
-    storage.setItem(STORAGE_KEY_V2, JSON.stringify(state));
+    await fetch("/api/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state)
+    });
   } catch {
     /* fail silently */
   }
@@ -167,9 +118,4 @@ export function archiveCurrentWeek(state: V2AppState): V2AppState {
     weekStart: getMondayOfWeek(new Date()),
     archives: [...state.archives, archive]
   };
-}
-
-export function loadArchives(): WeekArchive[] {
-  const state = loadState();
-  return state.archives;
 }

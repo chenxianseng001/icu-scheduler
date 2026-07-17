@@ -10,6 +10,7 @@ $mimeTypes = @{
 }
 
 $root = $PSScriptRoot
+$dataFile = Join-Path $root "排班数据.json"
 
 while ($listener.IsListening) {
     $context = $listener.GetContext()
@@ -17,6 +18,32 @@ while ($listener.IsListening) {
     $response = $context.Response
 
     $urlPath = $request.Url.AbsolutePath.TrimStart('/')
+
+    # API: load data
+    if ($urlPath -eq "api/load") {
+        $response.ContentType = "application/json; charset=utf-8"
+        if (Test-Path $dataFile) {
+            $content = [IO.File]::ReadAllBytes($dataFile)
+            $response.OutputStream.Write($content, 0, $content.Length)
+        } else {
+            $response.StatusCode = 204
+        }
+        $response.Close()
+        continue
+    }
+
+    # API: save data
+    if ($urlPath -eq "api/save" -and $request.HttpMethod -eq "POST") {
+        $reader = New-Object System.IO.StreamReader($request.InputStream, [Text.Encoding]::UTF8)
+        $body = $reader.ReadToEnd()
+        $reader.Close()
+        [IO.File]::WriteAllText($dataFile, $body, [Text.Encoding]::UTF8)
+        $response.StatusCode = 200
+        $response.Close()
+        continue
+    }
+
+    # Static files
     if ($urlPath -eq "") { $urlPath = "index.html" }
 
     $filePath = Join-Path $root $urlPath
