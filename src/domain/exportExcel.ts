@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { dayLabels, getDoctorDayStatus, shiftLabels } from "./rules";
-import type { AppState, ScheduleIssue, ShiftKey } from "./types";
+import type { AppState, DoctorDayStatus, ScheduleIssue, ShiftKey } from "./types";
 
 function getDoctorName(state: AppState, doctorId: string | null) {
   if (!doctorId) {
@@ -21,15 +21,27 @@ function buildDateRows(state: AppState) {
 }
 
 function buildDoctorRows(state: AppState) {
+  const formatStatus = (status: DoctorDayStatus) => {
+    if (status === "offAfterNight") {
+      return "出";
+    }
+
+    if (status === "rest") {
+      return "休";
+    }
+
+    return shiftLabels[status];
+  };
+
   return state.doctors.map((doctor) => ({
     医生: doctor.name,
-    周一: getDoctorDayStatus(state.schedule, doctor.id, 0),
-    周二: getDoctorDayStatus(state.schedule, doctor.id, 1),
-    周三: getDoctorDayStatus(state.schedule, doctor.id, 2),
-    周四: getDoctorDayStatus(state.schedule, doctor.id, 3),
-    周五: getDoctorDayStatus(state.schedule, doctor.id, 4),
-    周六: getDoctorDayStatus(state.schedule, doctor.id, 5),
-    周日: getDoctorDayStatus(state.schedule, doctor.id, 6)
+    周一: formatStatus(getDoctorDayStatus(state.schedule, doctor.id, 0)),
+    周二: formatStatus(getDoctorDayStatus(state.schedule, doctor.id, 1)),
+    周三: formatStatus(getDoctorDayStatus(state.schedule, doctor.id, 2)),
+    周四: formatStatus(getDoctorDayStatus(state.schedule, doctor.id, 3)),
+    周五: formatStatus(getDoctorDayStatus(state.schedule, doctor.id, 4)),
+    周六: formatStatus(getDoctorDayStatus(state.schedule, doctor.id, 5)),
+    周日: formatStatus(getDoctorDayStatus(state.schedule, doctor.id, 6))
   }));
 }
 

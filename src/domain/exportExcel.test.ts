@@ -40,3 +40,14 @@ it("exports the workbook as ICU排班.xlsx", () => {
   expect(XLSX.writeFile).toHaveBeenCalledTimes(1);
   expect(XLSX.writeFile).toHaveBeenCalledWith(expect.anything(), "ICU排班.xlsx");
 });
+
+it("exports Chinese doctor-day statuses in the doctor view", () => {
+  const schedule = createEmptySchedule();
+  schedule.days[0].assignments.night1 = sampleDoctors[0].id;
+  const workbook = buildWorkbook({ doctors: [sampleDoctors[0]], schedule }, []);
+  const doctorRows = XLSX.utils.sheet_to_json<Record<string, string>>(workbook.Sheets["按医生查看"]);
+
+  expect(doctorRows[0].周一).toBe("夜1");
+  expect(doctorRows[0].周二).toBe("出");
+  expect(doctorRows[0].周三).toBe("休");
+});
