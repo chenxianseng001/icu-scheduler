@@ -289,6 +289,7 @@ export default function App() {
               issues={issues}
               schedule={state.schedule}
               selectedDoctorId={selectedDoctorId}
+              weekStart={state.weekStart}
               onAssign={assignDoctor}
               onAddExtra={addExtraDoctor}
               onRemoveExtra={removeExtraDoctor}

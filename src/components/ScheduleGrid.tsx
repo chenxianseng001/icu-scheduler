@@ -9,6 +9,7 @@ interface ScheduleGridProps {
   issues: ScheduleIssue[];
   schedule: WeeklySchedule;
   selectedDoctorId: string | null;
+  weekStart: string;
   onAssign: (dayIndex: DayIndex, shiftKey: ShiftKey, doctorId: string | null) => void;
   onAddExtra: (dayIndex: DayIndex, type: "day" | "night", doctorId: string) => void;
   onRemoveExtra: (dayIndex: DayIndex, type: "day" | "night", doctorId: string) => void;
@@ -130,21 +131,28 @@ export function ScheduleGrid({
   issues,
   schedule,
   selectedDoctorId,
+  weekStart,
   onAssign,
   onAddExtra,
   onRemoveExtra
 }: ScheduleGridProps) {
+  const weekDates = dayLabels.map((_, i) => {
+    const d = new Date(weekStart + "T00:00:00");
+    d.setDate(d.getDate() + i);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  });
+
   return (
     <section className="panel schedule-panel" aria-label="一周排班表">
       <div className="panel-heading">
         <h2>本周排班</h2>
-        <span>{selectedDoctorId ? `已选择 ${getDoctorName(doctors, selectedDoctorId)}` : "先选医生或直接拖拽"}</span>
+        <span>{selectedDoctorId ? `已选择 ${getDoctorName(doctors, selectedDoctorId)}` : weekDates[0] + " - " + weekDates[6]}</span>
       </div>
       <div className="schedule-grid">
         <div className="grid-corner" />
-        {dayLabels.map((label) => (
+        {dayLabels.map((label, i) => (
           <div key={label} className="day-header">
-            {label}
+            {label}<br /><span className="day-date">{weekDates[i]}</span>
           </div>
         ))}
         {shiftKeys.map((shiftKey) => (
