@@ -10,13 +10,12 @@ interface ScheduleGridProps {
   schedule: WeeklySchedule;
   selectedDoctorId: string | null;
   onAssign: (dayIndex: DayIndex, shiftKey: ShiftKey, doctorId: string | null) => void;
+  onAddExtra: (dayIndex: DayIndex, type: "day" | "night", doctorId: string) => void;
+  onRemoveExtra: (dayIndex: DayIndex, type: "day" | "night", doctorId: string) => void;
 }
 
 function getDoctorName(doctors: Doctor[], doctorId: string | null) {
-  if (!doctorId) {
-    return "";
-  }
-
+  if (!doctorId) return "";
   return doctors.find((doctor) => doctor.id === doctorId)?.name ?? doctorId;
 }
 
@@ -85,7 +84,56 @@ function ScheduleCell({
   );
 }
 
-export function ScheduleGrid({ doctors, issues, schedule, selectedDoctorId, onAssign }: ScheduleGridProps) {
+interface ExtraCellProps {
+  dayIndex: DayIndex;
+  doctorIds: string[];
+  doctors: Doctor[];
+  type: "day" | "night";
+  onRemoveExtra: (dayIndex: DayIndex, type: "day" | "night", doctorId: string) => void;
+}
+
+function ExtraCell({ dayIndex, doctorIds, doctors, type, onRemoveExtra }: ExtraCellProps) {
+  const dropId = `extra-${type}:${dayIndex}`;
+  const droppable = useDroppable({ id: dropId });
+
+  return (
+    <div
+      ref={droppable.setNodeRef}
+      className={["extra-cell", droppable.isOver ? "drop-target" : ""].filter(Boolean).join(" ")}
+    >
+      {doctorIds.length === 0 ? (
+        <span className="extra-placeholder">拖入</span>
+      ) : (
+        doctorIds.map((id) => {
+          const name = getDoctorName(doctors, id);
+          return (
+            <span key={id} className="extra-tag">
+              {name}
+              <button
+                type="button"
+                className="extra-tag-remove"
+                aria-label={`移除 ${name}`}
+                onClick={() => onRemoveExtra(dayIndex, type, id)}
+              >
+                ×
+              </button>
+            </span>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+export function ScheduleGrid({
+  doctors,
+  issues,
+  schedule,
+  selectedDoctorId,
+  onAssign,
+  onAddExtra,
+  onRemoveExtra
+}: ScheduleGridProps) {
   return (
     <section className="panel schedule-panel" aria-label="一周排班表">
       <div className="panel-heading">
@@ -120,6 +168,33 @@ export function ScheduleGrid({ doctors, issues, schedule, selectedDoctorId, onAs
             })}
           </div>
         ))}
+        {/* Extra rows */}
+        <div className="shift-row">
+          <div className="shift-label extra-label">+白</div>
+          {schedule.days.map((day) => (
+            <ExtraCell
+              key={`extra-day-${day.dayIndex}`}
+              dayIndex={day.dayIndex}
+              doctorIds={day.extraDay}
+              doctors={doctors}
+              type="day"
+              onRemoveExtra={onRemoveExtra}
+            />
+          ))}
+        </div>
+        <div className="shift-row">
+          <div className="shift-label extra-label">+夜</div>
+          {schedule.days.map((day) => (
+            <ExtraCell
+              key={`extra-night-${day.dayIndex}`}
+              dayIndex={day.dayIndex}
+              doctorIds={day.extraNight}
+              doctors={doctors}
+              type="night"
+              onRemoveExtra={onRemoveExtra}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

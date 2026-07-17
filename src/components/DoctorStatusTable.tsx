@@ -12,15 +12,17 @@ const statusLabel: Record<DoctorDayStatus, string> = {
   day2: "白2",
   night1: "夜1",
   night2: "夜2",
+  extraDay: "白",
+  extraNight: "夜",
   offAfterNight: "出",
   rest: "休"
 };
 
 function cellClassName(status: DoctorDayStatus, hasIssue: boolean) {
   const classes = ["status-cell"];
-  if (status === "night1" || status === "night2") {
+  if (status === "night1" || status === "night2" || status === "extraNight") {
     classes.push("status-night");
-  } else if (status === "day1" || status === "day2") {
+  } else if (status === "day1" || status === "day2" || status === "extraDay") {
     classes.push("status-day");
   } else if (status === "offAfterNight") {
     classes.push("status-off");

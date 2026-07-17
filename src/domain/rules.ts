@@ -47,7 +47,9 @@ export function createEmptySchedule(): WeeklySchedule {
   return {
     days: Array.from({ length: 7 }, (_, dayIndex) => ({
       dayIndex: dayIndex as DayIndex,
-      assignments: { ...createEmptyAssignments() }
+      assignments: { ...createEmptyAssignments() },
+      extraDay: [] as string[],
+      extraNight: [] as string[]
     }))
   };
 }
@@ -68,6 +70,9 @@ export function getDoctorCounts(schedule: WeeklySchedule, doctorId: string): Doc
         day += 1;
       }
     }
+
+    if (scheduleDay.extraDay.includes(doctorId)) day += 1;
+    if (scheduleDay.extraNight.includes(doctorId)) night += 1;
   }
 
   return {
@@ -93,11 +98,15 @@ export function getDoctorDayStatus(
     }
   }
 
+  if (scheduleDay.extraDay.includes(doctorId)) return "extraDay";
+  if (scheduleDay.extraNight.includes(doctorId)) return "extraNight";
+
   if (day > 0) {
     const previousDay = schedule.days[day - 1];
     if (
       previousDay &&
-      nightShiftKeys.some((shiftKey) => previousDay.assignments[shiftKey] === doctorId)
+      (nightShiftKeys.some((shiftKey) => previousDay.assignments[shiftKey] === doctorId) ||
+       previousDay.extraNight.includes(doctorId))
     ) {
       return "offAfterNight";
     }

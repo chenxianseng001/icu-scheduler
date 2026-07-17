@@ -150,6 +150,36 @@ export default function App() {
     }));
   };
 
+  const addExtraDoctor = (dayIndex: DayIndex, type: "day" | "night", doctorId: string) => {
+    setSchedulerMessage(null);
+    setState((current) => ({
+      ...current,
+      schedule: {
+        days: current.schedule.days.map((day) => {
+          if (day.dayIndex !== dayIndex) return day;
+          const key = type === "day" ? "extraDay" : "extraNight";
+          const list = day[key];
+          if (list.includes(doctorId)) return day;
+          return { ...day, [key]: [...list, doctorId] };
+        })
+      }
+    }));
+  };
+
+  const removeExtraDoctor = (dayIndex: DayIndex, type: "day" | "night", doctorId: string) => {
+    setSchedulerMessage(null);
+    setState((current) => ({
+      ...current,
+      schedule: {
+        days: current.schedule.days.map((day) => {
+          if (day.dayIndex !== dayIndex) return day;
+          const key = type === "day" ? "extraDay" : "extraNight";
+          return { ...day, [key]: day[key].filter((id) => id !== doctorId) };
+        })
+      }
+    }));
+  };
+
   const autoSchedule = () => {
     const result = generateSchedule(state.doctors);
     if (result.ok) {
@@ -201,13 +231,26 @@ export default function App() {
     const overId = event.over ? String(event.over.id) : "";
     setActiveDragDoctorId(null);
 
-    if (!activeId.startsWith("doctor:") || !overId.startsWith("cell:")) {
+    if (!activeId.startsWith("doctor:")) return;
+
+    const doctorId = activeId.replace("doctor:", "");
+
+    if (overId.startsWith("cell:")) {
+      const [, dayIndexText, shiftKey] = overId.split(":");
+      assignDoctor(Number(dayIndexText) as DayIndex, shiftKey as ShiftKey, doctorId);
       return;
     }
 
-    const doctorId = activeId.replace("doctor:", "");
-    const [, dayIndexText, shiftKey] = overId.split(":");
-    assignDoctor(Number(dayIndexText) as DayIndex, shiftKey as ShiftKey, doctorId);
+    if (overId.startsWith("extra-day:")) {
+      const dayIndex = Number(overId.split(":")[1]) as DayIndex;
+      addExtraDoctor(dayIndex, "day", doctorId);
+      return;
+    }
+
+    if (overId.startsWith("extra-night:")) {
+      const dayIndex = Number(overId.split(":")[1]) as DayIndex;
+      addExtraDoctor(dayIndex, "night", doctorId);
+    }
   };
 
   const handleDragCancel = () => {
@@ -247,6 +290,8 @@ export default function App() {
               schedule={state.schedule}
               selectedDoctorId={selectedDoctorId}
               onAssign={assignDoctor}
+              onAddExtra={addExtraDoctor}
+              onRemoveExtra={removeExtraDoctor}
             />
             <DoctorStatusTable
               doctors={state.doctors}

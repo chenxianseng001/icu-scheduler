@@ -1,7 +1,7 @@
 export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type DoctorKind = "normal" | "dayOnly";
 export type ShiftKey = "day1" | "day2" | "night1" | "night2";
-export type DoctorDayStatus = ShiftKey | "offAfterNight" | "rest";
+export type DoctorDayStatus = ShiftKey | "extraDay" | "extraNight" | "offAfterNight" | "rest";
 
 export interface Doctor {
   id: string;
@@ -14,6 +14,8 @@ export interface Doctor {
 export interface DaySchedule {
   dayIndex: DayIndex;
   assignments: Record<ShiftKey, string | null>;
+  extraDay: string[];
+  extraNight: string[];
 }
 
 export interface WeeklySchedule {

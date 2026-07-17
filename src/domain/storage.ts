@@ -83,7 +83,24 @@ export async function loadState(): Promise<V2AppState> {
     if (isValidV2State(parsed)) {
       return {
         ...parsed,
-        doctors: parsed.doctors.map(cloneDoctor)
+        doctors: parsed.doctors.map(cloneDoctor),
+        schedule: {
+          days: parsed.schedule.days.map((day) => ({
+            ...day,
+            extraDay: Array.isArray(day.extraDay) ? day.extraDay : [],
+            extraNight: Array.isArray(day.extraNight) ? day.extraNight : []
+          }))
+        },
+        archives: parsed.archives.map((a) => ({
+          ...a,
+          schedule: {
+            days: a.schedule.days.map((day) => ({
+              ...day,
+              extraDay: Array.isArray(day.extraDay) ? day.extraDay : [],
+              extraNight: Array.isArray(day.extraNight) ? day.extraNight : []
+            }))
+          }
+        }))
       };
     }
     return createDefaultState();

@@ -22,14 +22,10 @@ function buildDateRows(state: AppState) {
 
 function buildDoctorRows(state: AppState) {
   const formatStatus = (status: DoctorDayStatus) => {
-    if (status === "offAfterNight") {
-      return "出";
-    }
-
-    if (status === "rest") {
-      return "休";
-    }
-
+    if (status === "offAfterNight") return "出";
+    if (status === "rest") return "休";
+    if (status === "extraDay") return "白";
+    if (status === "extraNight") return "夜";
     return shiftLabels[status];
   };
 

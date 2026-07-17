@@ -16,6 +16,12 @@ function countSchedule(
     } else if (status === "night1" || status === "night2") {
       acc.night++;
       hasShift = true;
+    } else if (status === "extraDay") {
+      acc.day++;
+      hasShift = true;
+    } else if (status === "extraNight") {
+      acc.night++;
+      hasShift = true;
     } else if (status === "offAfterNight") {
       acc.offAfterNight++;
     } else {
