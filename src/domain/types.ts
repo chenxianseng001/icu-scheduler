@@ -25,6 +25,32 @@ export interface AppState {
   schedule: WeeklySchedule;
 }
 
+export interface WeekArchive {
+  weekStart: string;
+  schedule: WeeklySchedule;
+  archivedAt: string;
+}
+
+export interface V2AppState {
+  version: 2;
+  doctors: Doctor[];
+  schedule: WeeklySchedule;
+  weekStart: string;
+  archives: WeekArchive[];
+}
+
+export interface DoctorStats {
+  doctorId: string;
+  doctorName: string;
+  kind: DoctorKind;
+  day: number;
+  night: number;
+  total: number;
+  offAfterNight: number;
+  rest: number;
+  weekCount: number;
+}
+
 export interface DoctorCounts {
   day: number;
   night: number;

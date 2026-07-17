@@ -211,6 +211,23 @@ select {
   font-size: 13px;
 }
 
+.doctor-delete-button {
+  min-height: 34px;
+  padding: 0 6px;
+  color: #a12828;
+  font-size: 16px;
+  font-weight: 700;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doctor-delete-button:hover {
+  background: #f9dfdf;
+  border-color: #e0baba;
+}
+
 .doctor-meta {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -282,6 +299,80 @@ select {
   width: 12px;
   height: 12px;
   margin: 0;
+}
+
+.add-doctor-area {
+  border-top: 1px solid #e1e7ed;
+  padding: 10px 0 0;
+}
+
+.add-doctor-trigger {
+  width: 100%;
+  min-height: 36px;
+  border: 1px dashed #bfccd8;
+  border-radius: 6px;
+  background: transparent;
+  color: #4e5f70;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.add-doctor-trigger:hover {
+  border-color: #2364aa;
+  color: #2364aa;
+  background: #f4f8fb;
+}
+
+.add-doctor-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.add-doctor-name {
+  flex: 1 1 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #bfccd8;
+  border-radius: 6px;
+}
+
+.add-doctor-kind {
+  flex: 1 1 0;
+  min-height: 34px;
+  padding: 0 6px;
+  border: 1px solid #bfccd8;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.add-doctor-confirm,
+.add-doctor-cancel {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.add-doctor-confirm {
+  background: #2364aa;
+  color: #ffffff;
+  border: 1px solid #2364aa;
+}
+
+.add-doctor-confirm:hover {
+  background: #1a4d85;
+}
+
+.add-doctor-cancel {
+  background: #ffffff;
+  color: #4e5f70;
+  border: 1px solid #bfccd8;
+}
+
+.add-doctor-cancel:hover {
+  background: #f4f5f7;
 }
 
 .schedule-panel {
@@ -382,6 +473,7 @@ select {
 }
 
 .issue-panel {
+  grid-row: 1;
   max-height: calc(100vh - 98px);
   overflow: auto;
 }
@@ -415,6 +507,158 @@ select {
   background: #fff8f8;
   color: #8f1f1f;
   font-size: 14px;
+}
+
+.status-table-panel {
+  grid-column: 2;
+}
+
+.status-table-wrapper {
+  overflow-x: auto;
+}
+
+.status-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.status-table th,
+.status-table td {
+  min-width: 64px;
+  padding: 6px 4px;
+  border-right: 1px solid #e1e7ed;
+  border-bottom: 1px solid #e1e7ed;
+  text-align: center;
+}
+
+.status-table thead th {
+  background: #f8fafb;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+}
+
+.status-doctor-col {
+  min-width: 80px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.status-doctor-name {
+  font-weight: 700;
+}
+
+.status-doctor-kind {
+  margin-left: 4px;
+  font-size: 11px;
+  color: #8e9aaa;
+}
+
+.status-cell {
+  font-weight: 700;
+}
+
+.status-day {
+  background: #f4f8fb;
+  color: #1f3d5c;
+}
+
+.status-night {
+  background: #2c3e50;
+  color: #eef3f7;
+}
+
+.status-off {
+  background: #e9ecef;
+  color: #8e9aaa;
+}
+
+.status-rest {
+  background: #ffffff;
+  color: #adb5bd;
+}
+
+.status-issue {
+  background: #f9dfdf;
+  color: #8f1f1f;
+}
+
+.stats-panel {
+  grid-column: 2;
+}
+
+.stats-filter {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e1e7ed;
+}
+
+.stats-filter label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #4e5f70;
+}
+
+.stats-filter input {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid #bfccd8;
+  border-radius: 6px;
+}
+
+.stats-table-wrapper {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 5px 6px;
+  border-right: 1px solid #e1e7ed;
+  border-bottom: 1px solid #e1e7ed;
+  text-align: center;
+}
+
+.stats-table thead th {
+  background: #f8fafb;
+  font-weight: 700;
+}
+
+.stats-doctor-name {
+  text-align: left;
+  font-weight: 700;
+  min-width: 72px;
+}
+
+.stats-doctor-kind-cell {
+  color: #8e9aaa;
+  font-size: 11px;
+  text-align: left;
+}
+
+.stat-over {
+  background: #f9dfdf;
+  color: #a12828;
+  font-weight: 700;
+}
+
+.stats-total {
+  border-top: 2px solid #bfccd8;
+}
+
+.stats-total-label {
+  text-align: left;
+  font-weight: 700;
 }
 
 @media (max-width: 1120px) {

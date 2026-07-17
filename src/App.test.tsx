@@ -32,9 +32,9 @@ it("allows editing doctor names", async () => {
 
   const nameInput = screen.getByDisplayValue("王医生");
   await user.clear(nameInput);
-  await user.type(nameInput, "孙医生");
+  await user.type(nameInput, "测试医生");
 
-  expect(screen.getByDisplayValue("孙医生")).toBeInTheDocument();
+  expect(screen.getByDisplayValue("测试医生")).toBeInTheDocument();
   expect(screen.queryByDisplayValue("王医生")).not.toBeInTheDocument();
 });
 

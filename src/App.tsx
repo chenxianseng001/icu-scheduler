@@ -2,17 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import "./App.css";
 import { DoctorPanel } from "./components/DoctorPanel";
+import { DoctorStatusTable } from "./components/DoctorStatusTable";
 import { IssuePanel } from "./components/IssuePanel";
 import { ScheduleGrid } from "./components/ScheduleGrid";
+import { StatisticsPanel } from "./components/StatisticsPanel";
 import { Toolbar } from "./components/Toolbar";
 import { exportWorkbook } from "./domain/exportExcel";
 import { createEmptySchedule, validateSchedule } from "./domain/rules";
 import { generateSchedule } from "./domain/scheduler";
-import { loadAppState, saveAppState } from "./domain/storage";
-import type { AppState, DayIndex, Doctor, ShiftKey } from "./domain/types";
+import { loadState, saveState, archiveCurrentWeek } from "./domain/storage";
+import type { DayIndex, Doctor, DoctorKind, ShiftKey, V2AppState } from "./domain/types";
 
 export default function App() {
-  const [state, setState] = useState<AppState>(() => loadAppState());
+  const [state, setState] = useState<V2AppState>(() => loadState());
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [schedulerMessage, setSchedulerMessage] = useState<string | null>(null);
   const [activeDragDoctorId, setActiveDragDoctorId] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export default function App() {
   );
 
   useEffect(() => {
-    saveAppState(state);
+    saveState(state);
   }, [state]);
 
   const updateDoctors = (updater: (doctors: Doctor[]) => Doctor[]) => {
@@ -34,7 +36,7 @@ export default function App() {
     }));
   };
 
-  const updateSchedule = (updater: (schedule: AppState["schedule"]) => AppState["schedule"]) => {
+  const updateSchedule = (updater: (schedule: V2AppState["schedule"]) => V2AppState["schedule"]) => {
     setSchedulerMessage(null);
     setState((current) => ({
       ...current,
@@ -89,6 +91,48 @@ export default function App() {
     );
   };
 
+  const addDoctor = (name: string, kind: DoctorKind) => {
+    const id = crypto.randomUUID();
+    const newDoctor: Doctor = {
+      id,
+      name: name || "新医生",
+      kind,
+      unavailableDays: [],
+      ...(kind === "dayOnly" ? { targetDayShifts: 2 as const } : {})
+    };
+    updateDoctors((doctors) => [...doctors, newDoctor]);
+  };
+
+  const deleteDoctor = (doctorId: string) => {
+    const doctor = state.doctors.find((d) => d.id === doctorId);
+    if (!doctor) return;
+
+    const assignedCount = state.schedule.days.reduce((count, day) => {
+      return count + Object.values(day.assignments).filter((a) => a === doctorId).length;
+    }, 0);
+
+    const confirmMsg =
+      assignedCount > 0
+        ? `${doctor.name} 本周已排 ${assignedCount} 个班，确认删除？`
+        : `确认删除 ${doctor.name}？`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setSchedulerMessage(null);
+    setState((current) => ({
+      ...current,
+      doctors: current.doctors.filter((d) => d.id !== doctorId),
+      schedule: {
+        days: current.schedule.days.map((day) => ({
+          ...day,
+          assignments: Object.fromEntries(
+            Object.entries(day.assignments).map(([key, val]) => [key, val === doctorId ? null : val])
+          ) as Record<ShiftKey, string | null>
+        }))
+      }
+    }));
+  };
+
   const autoSchedule = () => {
     const result = generateSchedule(state.doctors);
     if (result.ok) {
@@ -109,13 +153,15 @@ export default function App() {
 
   const newWeek = () => {
     setSchedulerMessage(null);
-    setState((current) => ({
-      doctors: current.doctors.map((doctor) => ({
-        ...doctor,
-        unavailableDays: []
-      })),
-      schedule: createEmptySchedule()
-    }));
+    setState((current) =>
+      archiveCurrentWeek({
+        ...current,
+        doctors: current.doctors.map((doctor) => ({
+          ...doctor,
+          unavailableDays: []
+        }))
+      })
+    );
   };
 
   const exportSchedule = () => {
@@ -174,6 +220,8 @@ export default function App() {
             onRenameDoctor={renameDoctor}
             onToggleUnavailableDay={toggleUnavailableDay}
             onChangeTargetDayShifts={changeTargetDayShifts}
+            onAddDoctor={addDoctor}
+            onDeleteDoctor={deleteDoctor}
           />
           <ScheduleGrid
             doctors={state.doctors}
@@ -182,6 +230,12 @@ export default function App() {
             selectedDoctorId={selectedDoctorId}
             onAssign={assignDoctor}
           />
+          <DoctorStatusTable
+            doctors={state.doctors}
+            schedule={state.schedule}
+            issues={issues}
+          />
+          <StatisticsPanel state={state} />
           <IssuePanel issues={issues} schedulerMessage={schedulerMessage} />
         </div>
         <DragOverlay>

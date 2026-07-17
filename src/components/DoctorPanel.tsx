@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
+import { useState } from "react";
 import { dayLabels, getDoctorCounts } from "../domain/rules";
-import type { DayIndex, Doctor, WeeklySchedule } from "../domain/types";
+import type { DayIndex, Doctor, DoctorKind, WeeklySchedule } from "../domain/types";
 
 interface DoctorPanelProps {
   doctors: Doctor[];
@@ -10,6 +11,8 @@ interface DoctorPanelProps {
   onRenameDoctor: (doctorId: string, name: string) => void;
   onToggleUnavailableDay: (doctorId: string, dayIndex: DayIndex) => void;
   onChangeTargetDayShifts: (doctorId: string, target: 2 | 3) => void;
+  onAddDoctor: (name: string, kind: DoctorKind) => void;
+  onDeleteDoctor: (doctorId: string) => void;
 }
 
 interface DoctorCardProps {
@@ -20,6 +23,7 @@ interface DoctorCardProps {
   onRenameDoctor: (doctorId: string, name: string) => void;
   onToggleUnavailableDay: (doctorId: string, dayIndex: DayIndex) => void;
   onChangeTargetDayShifts: (doctorId: string, target: 2 | 3) => void;
+  onDeleteDoctor: (doctorId: string) => void;
 }
 
 function DoctorCard({
@@ -29,7 +33,8 @@ function DoctorCard({
   onSelectDoctor,
   onRenameDoctor,
   onToggleUnavailableDay,
-  onChangeTargetDayShifts
+  onChangeTargetDayShifts,
+  onDeleteDoctor
 }: DoctorCardProps) {
   const counts = getDoctorCounts(schedule, doctor.id);
   const totalLimit = doctor.kind === "dayOnly" ? doctor.targetDayShifts ?? 2 : 3;
@@ -67,6 +72,14 @@ function DoctorCard({
           {...draggable.listeners}
         >
           拖
+        </button>
+        <button
+          type="button"
+          className="doctor-delete-button"
+          aria-label={`删除 ${doctor.name}`}
+          onClick={() => onDeleteDoctor(doctor.id)}
+        >
+          ×
         </button>
       </div>
       <div className="doctor-meta">
@@ -116,8 +129,27 @@ export function DoctorPanel({
   onSelectDoctor,
   onRenameDoctor,
   onToggleUnavailableDay,
-  onChangeTargetDayShifts
+  onChangeTargetDayShifts,
+  onAddDoctor,
+  onDeleteDoctor
 }: DoctorPanelProps) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newKind, setNewKind] = useState<DoctorKind>("normal");
+
+  const handleAdd = () => {
+    if (showAddForm) {
+      if (newName.trim()) {
+        onAddDoctor(newName.trim(), newKind);
+        setNewName("");
+        setNewKind("normal");
+      }
+      setShowAddForm(false);
+    } else {
+      setShowAddForm(true);
+    }
+  };
+
   return (
     <aside className="panel doctor-panel" aria-label="医生列表">
       <div className="panel-heading">
@@ -135,8 +167,41 @@ export function DoctorPanel({
             onRenameDoctor={onRenameDoctor}
             onToggleUnavailableDay={onToggleUnavailableDay}
             onChangeTargetDayShifts={onChangeTargetDayShifts}
+            onDeleteDoctor={onDeleteDoctor}
           />
         ))}
+      </div>
+      <div className="add-doctor-area">
+        {showAddForm ? (
+          <div className="add-doctor-form">
+            <input
+              className="add-doctor-name"
+              placeholder="医生姓名"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              autoFocus
+            />
+            <select
+              className="add-doctor-kind"
+              value={newKind}
+              onChange={(e) => setNewKind(e.target.value as DoctorKind)}
+            >
+              <option value="normal">普通医生</option>
+              <option value="dayOnly">只白班</option>
+            </select>
+            <button type="button" className="add-doctor-confirm" onClick={handleAdd}>
+              确认添加
+            </button>
+            <button type="button" className="add-doctor-cancel" onClick={() => setShowAddForm(false)}>
+              取消
+            </button>
+          </div>
+        ) : (
+          <button type="button" className="add-doctor-trigger" onClick={handleAdd}>
+            + 添加医生
+          </button>
+        )}
       </div>
     </aside>
   );
