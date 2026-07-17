@@ -57,15 +57,15 @@ it("allows editing doctor names", async () => {
   render(<App />);
 
   await waitFor(() => {
-    expect(screen.getByDisplayValue("王医生")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("胡医生")).toBeInTheDocument();
   });
 
-  const nameInput = screen.getByDisplayValue("王医生");
+  const nameInput = screen.getByDisplayValue("胡医生");
   await user.clear(nameInput);
   await user.type(nameInput, "测试医生");
 
   expect(screen.getByDisplayValue("测试医生")).toBeInTheDocument();
-  expect(screen.queryByDisplayValue("王医生")).not.toBeInTheDocument();
+  expect(screen.queryByDisplayValue("胡医生")).not.toBeInTheDocument();
 });
 
 it("allows clearing one assigned shift without clearing the whole week", async () => {
@@ -73,15 +73,15 @@ it("allows clearing one assigned shift without clearing the whole week", async (
   render(<App />);
 
   await waitFor(() => {
-    expect(screen.getByDisplayValue("王医生")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("胡医生")).toBeInTheDocument();
   });
 
-  await user.click(screen.getByDisplayValue("王医生"));
+  await user.click(screen.getByDisplayValue("胡医生"));
   await user.click(screen.getAllByRole("button", { name: "缺人" })[0]);
 
-  expect(screen.getByRole("button", { name: "王医生" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "胡医生" })).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "清除 周一 白1 王医生" }));
+  await user.click(screen.getByRole("button", { name: "清除 周一 白1 胡医生" }));
 
   expect(screen.getAllByRole("button", { name: "缺人" })[0]).toBeInTheDocument();
 });

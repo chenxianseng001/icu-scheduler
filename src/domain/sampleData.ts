@@ -7,19 +7,16 @@ const def = {
 };
 
 export const sampleDoctors: Doctor[] = [
-  { id: "a", name: "王医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "b", name: "李医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "c", name: "张医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "d", name: "赵医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "e", name: "陈医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "f", name: "刘医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "g", name: "杨医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "h", name: "黄医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "i", name: "周医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "j", name: "吴医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "k", name: "孙医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "l", name: "马医生", kind: "normal", unavailableDays: [], ...def },
-  { id: "m", name: "朱医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "hu", name: "胡医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "luo", name: "罗医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "xue", name: "薛医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "zhao", name: "赵医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "yuan", name: "袁医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "tuo", name: "庹医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "liu", name: "刘医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "qu", name: "瞿医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "yin", name: "尹医生", kind: "normal", unavailableDays: [], ...def },
+  { id: "zhu", name: "朱医生", kind: "normal", unavailableDays: [], ...def },
   { id: "zhong", name: "钟医生", kind: "dayOnly", targetDayShifts: 2, unavailableDays: [], ...def },
-  { id: "midnight", name: "郑医生", kind: "nightOnly", unavailableDays: [], ...def }
+  { id: "yang", name: "杨医生", kind: "nightOnly", targetNightShifts: 2, unavailableDays: [], ...def }
 ];
