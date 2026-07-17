@@ -175,9 +175,11 @@ export function validateSchedule(
         continue;
       }
 
+      const doctor = getDoctorById(doctors, doctorId);
+      const doctorName = doctor?.name ?? doctorId;
       issues.push({
         type: "sameDayMultipleAssignments",
-        message: `${doctorId} 在 ${dayLabels[daySchedule.dayIndex]} 被安排了多个班次`,
+        message: `${doctorName} 在 ${dayLabels[daySchedule.dayIndex]} 被安排了多个班次`,
         doctorId,
         dayIndex: daySchedule.dayIndex
       });

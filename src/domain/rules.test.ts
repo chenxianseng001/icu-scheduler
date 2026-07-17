@@ -39,3 +39,13 @@ it("reports missing positions and rule violations", () => {
   expect(issues.some((issue) => issue.type === "sameDayMultipleAssignments")).toBe(true);
   expect(issues.some((issue) => issue.type === "dayOnlyDoctorOnNight")).toBe(true);
 });
+
+it("uses doctor names in same-day duplicate issue messages", () => {
+  const schedule = createEmptySchedule();
+  schedule.days[0].assignments.day1 = "a";
+  schedule.days[0].assignments.day2 = "a";
+
+  const issues = validateSchedule(schedule, doctors, { requireFilledPositions: false });
+
+  expect(issues.find((issue) => issue.type === "sameDayMultipleAssignments")?.message).toContain("王医生");
+});
