@@ -1,3 +1,6 @@
+.superpowers/
+.vite/
+*.log
 node_modules/
 dist/
 *.tsbuildinfo
