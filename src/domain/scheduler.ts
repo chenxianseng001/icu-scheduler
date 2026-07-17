@@ -231,6 +231,27 @@ export function generateSchedule(
 
       return left.name.localeCompare(right.name) || left.id.localeCompare(right.id);
     });
+
+    // Shuffle candidates with equal priority to produce different schedules each run
+    if (candidates.length > 1) {
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      // Re-sort to restore priority order, but random within ties
+      candidates.sort((a, b) => {
+        const aCounts = counts.get(a.id)!;
+        const bCounts = counts.get(b.id)!;
+        const aPref = (isNightShift && a.preference === "1白2夜") || (!isNightShift && a.preference === "2白1夜") ? 0 : 1;
+        const bPref = (isNightShift && b.preference === "1白2夜") || (!isNightShift && b.preference === "2白1夜") ? 0 : 1;
+        if (aPref !== bPref) return aPref - bPref;
+        if (aCounts.total !== bCounts.total) return aCounts.total - bCounts.total;
+        const aSame = isNightShift ? aCounts.night : aCounts.day;
+        const bSame = isNightShift ? bCounts.night : bCounts.day;
+        if (aSame !== bSame) return aSame - bSame;
+        return Math.random() - 0.5; // random within ties
+      });
+    }
   }
 
   function assign(doctor: Doctor, dayIndex: number, shiftKey: ShiftKey) {
