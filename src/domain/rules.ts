@@ -162,6 +162,48 @@ export function validateSchedule(
           shiftKey
         });
       }
+
+      if (doctor.kind === "nightOnly" && !isNightShift(shiftKey)) {
+        issues.push({
+          type: "dayOnlyDoctorOnNight",
+          message: `${doctor.name} 不能排白班`,
+          doctorId,
+          dayIndex: daySchedule.dayIndex,
+          shiftKey
+        });
+      }
+
+      if (isNightShift(shiftKey)) {
+        // Check night spacing: ≥4 days between nights
+        for (let prev = daySchedule.dayIndex - 1; prev >= Math.max(0, daySchedule.dayIndex - 4); prev--) {
+          const prevDay = schedule.days[prev];
+          if (!prevDay) continue;
+          if (nightShiftKeys.some((sk) => prevDay.assignments[sk] === doctorId) ||
+              prevDay.extraNight.includes(doctorId)) {
+            issues.push({
+              type: "nightRecoveryConflict",
+              message: `${doctor.name} 夜班间隔不足 4 天`,
+              doctorId,
+              dayIndex: daySchedule.dayIndex
+            });
+            break;
+          }
+        }
+
+        // Check day→night adjacency
+        if (daySchedule.dayIndex > 0) {
+          const prevDay = schedule.days[daySchedule.dayIndex - 1];
+          if (prevDay && (dayShiftKeys.some((sk) => prevDay.assignments[sk] === doctorId) ||
+              prevDay.extraDay.includes(doctorId))) {
+            issues.push({
+              type: "nightRecoveryConflict",
+              message: `${doctor.name} 白班与夜班相邻`,
+              doctorId,
+              dayIndex: daySchedule.dayIndex
+            });
+          }
+        }
+      }
     }
   }
 

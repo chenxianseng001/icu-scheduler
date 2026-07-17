@@ -25,7 +25,7 @@ it("returns default state when server returns 204", async () => {
   mockFetchResponse(204);
   const state = await loadState();
   expect(state.version).toBe(2);
-  expect(state.doctors).toHaveLength(14);
+  expect(state.doctors).toHaveLength(15);
   expect(state.schedule).toEqual(createEmptySchedule());
   expect(state.archives).toEqual([]);
 });
@@ -84,7 +84,7 @@ it("archiveCurrentWeek is pure (no I/O)", () => {
 it("falls back to default when fetch throws", async () => {
   (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("network error"));
   const state = await loadState();
-  expect(state.doctors).toHaveLength(14);
+  expect(state.doctors).toHaveLength(15);
 });
 
 it("does not throw when save fetch throws", async () => {

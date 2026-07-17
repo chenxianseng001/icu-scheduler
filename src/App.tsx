@@ -102,6 +102,32 @@ export default function App() {
     );
   };
 
+  const toggleUnavailableDayShift = (doctorId: string, dayIndex: DayIndex) => {
+    updateDoctors((doctors) =>
+      doctors.map((doctor) => {
+        if (doctor.id !== doctorId) return doctor;
+        const arr = doctor.unavailableDayShifts;
+        return { ...doctor, unavailableDayShifts: arr.includes(dayIndex) ? arr.filter((d) => d !== dayIndex) : [...arr, dayIndex].sort() };
+      })
+    );
+  };
+
+  const toggleUnavailableNightShift = (doctorId: string, dayIndex: DayIndex) => {
+    updateDoctors((doctors) =>
+      doctors.map((doctor) => {
+        if (doctor.id !== doctorId) return doctor;
+        const arr = doctor.unavailableNightShifts;
+        return { ...doctor, unavailableNightShifts: arr.includes(dayIndex) ? arr.filter((d) => d !== dayIndex) : [...arr, dayIndex].sort() };
+      })
+    );
+  };
+
+  const changePreference = (doctorId: string, pref: "auto" | "1白2夜" | "2白1夜") => {
+    updateDoctors((doctors) =>
+      doctors.map((doctor) => (doctor.id === doctorId ? { ...doctor, preference: pref } : doctor))
+    );
+  };
+
   const renameDoctor = (doctorId: string, name: string) => {
     updateDoctors((doctors) =>
       doctors.map((doctor) => (doctor.id === doctorId ? { ...doctor, name } : doctor))
@@ -115,6 +141,9 @@ export default function App() {
       name: name || "新医生",
       kind,
       unavailableDays: [],
+      unavailableDayShifts: [],
+      unavailableNightShifts: [],
+      preference: "auto",
       ...(kind === "dayOnly" ? { targetDayShifts: 2 as const } : {})
     };
     updateDoctors((doctors) => [...doctors, newDoctor]);
@@ -181,7 +210,10 @@ export default function App() {
   };
 
   const autoSchedule = () => {
-    const result = generateSchedule(state.doctors);
+    const latestArchive = state.archives.length > 0
+      ? [...state.archives].sort((a, b) => b.archivedAt.localeCompare(a.archivedAt))[0]
+      : undefined;
+    const result = generateSchedule(state.doctors, latestArchive);
     if (result.ok) {
       setState((current) => ({
         ...current,
@@ -282,6 +314,9 @@ export default function App() {
             onChangeTargetDayShifts={changeTargetDayShifts}
             onAddDoctor={addDoctor}
             onDeleteDoctor={deleteDoctor}
+            onToggleUnavailableDayShift={toggleUnavailableDayShift}
+            onToggleUnavailableNightShift={toggleUnavailableNightShift}
+            onChangePreference={changePreference}
           />
           <div className="middle-column">
             <ScheduleGrid

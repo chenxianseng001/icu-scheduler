@@ -13,6 +13,9 @@ interface DoctorPanelProps {
   onChangeTargetDayShifts: (doctorId: string, target: 2 | 3) => void;
   onAddDoctor: (name: string, kind: DoctorKind) => void;
   onDeleteDoctor: (doctorId: string) => void;
+  onToggleUnavailableDayShift: (doctorId: string, dayIndex: DayIndex) => void;
+  onToggleUnavailableNightShift: (doctorId: string, dayIndex: DayIndex) => void;
+  onChangePreference: (doctorId: string, pref: "auto" | "1白2夜" | "2白1夜") => void;
 }
 
 interface DoctorCardProps {
@@ -24,6 +27,9 @@ interface DoctorCardProps {
   onToggleUnavailableDay: (doctorId: string, dayIndex: DayIndex) => void;
   onChangeTargetDayShifts: (doctorId: string, target: 2 | 3) => void;
   onDeleteDoctor: (doctorId: string) => void;
+  onToggleUnavailableDayShift: (doctorId: string, dayIndex: DayIndex) => void;
+  onToggleUnavailableNightShift: (doctorId: string, dayIndex: DayIndex) => void;
+  onChangePreference: (doctorId: string, pref: "auto" | "1白2夜" | "2白1夜") => void;
 }
 
 function DoctorCard({
@@ -34,14 +40,20 @@ function DoctorCard({
   onRenameDoctor,
   onToggleUnavailableDay,
   onChangeTargetDayShifts,
-  onDeleteDoctor
+  onDeleteDoctor,
+  onToggleUnavailableDayShift,
+  onToggleUnavailableNightShift,
+  onChangePreference
 }: DoctorCardProps) {
   const counts = getDoctorCounts(schedule, doctor.id);
   const totalLimit = doctor.kind === "dayOnly" ? doctor.targetDayShifts ?? 2 : 3;
-  const dayLimit = doctor.kind === "dayOnly" ? doctor.targetDayShifts ?? 2 : 2;
-  const nightLimit = doctor.kind === "dayOnly" ? 0 : 2;
+  const dayLimit = doctor.kind === "dayOnly" ? doctor.targetDayShifts ?? 2
+    : doctor.kind === "nightOnly" ? 0 : 2;
+  const nightLimit = doctor.kind === "nightOnly" ? 2 : doctor.kind === "dayOnly" ? 0 : 2;
   const overLimit = counts.total > totalLimit || counts.day > dayLimit || counts.night > nightLimit;
   const draggable = useDraggable({ id: `doctor:${doctor.id}` });
+
+  const kindLabel = doctor.kind === "dayOnly" ? "只白班" : doctor.kind === "nightOnly" ? "只夜班" : "普通";
 
   return (
     <article
@@ -83,7 +95,7 @@ function DoctorCard({
         </button>
       </div>
       <div className="doctor-meta">
-        <span>{doctor.kind === "dayOnly" ? "只白班" : "普通"}</span>
+        <span>{kindLabel}</span>
         <span className={counts.day > dayLimit ? "bad-stat" : ""}>白 {counts.day}/{dayLimit}</span>
         <span className={counts.night > nightLimit ? "bad-stat" : ""}>夜 {counts.night}/{nightLimit}</span>
         <span className={counts.total > totalLimit ? "bad-stat" : ""}>总 {counts.total}/{totalLimit}</span>
@@ -118,6 +130,55 @@ function DoctorCard({
           })}
         </div>
       </div>
+      <div className="unavailable-row">
+        <span className="unavailable-title">不上白</span>
+        <div className="unavailable-days" aria-label={`${doctor.name} 不上白班`}>
+          {dayLabels.map((label, index) => {
+            const dayIndex = index as DayIndex;
+            return (
+              <label key={label}>
+                <input
+                  type="checkbox"
+                  checked={doctor.unavailableDayShifts.includes(dayIndex)}
+                  onChange={() => onToggleUnavailableDayShift(doctor.id, dayIndex)}
+                />
+                {label.replace("周", "")}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+      <div className="unavailable-row">
+        <span className="unavailable-title">不上夜</span>
+        <div className="unavailable-days" aria-label={`${doctor.name} 不上夜班`}>
+          {dayLabels.map((label, index) => {
+            const dayIndex = index as DayIndex;
+            return (
+              <label key={label}>
+                <input
+                  type="checkbox"
+                  checked={doctor.unavailableNightShifts.includes(dayIndex)}
+                  onChange={() => onToggleUnavailableNightShift(doctor.id, dayIndex)}
+                />
+                {label.replace("周", "")}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+      {doctor.kind === "normal" ? (
+        <label className="target-select">
+          偏好
+          <select
+            value={doctor.preference}
+            onChange={(event) => onChangePreference(doctor.id, event.target.value as "auto" | "1白2夜" | "2白1夜")}
+          >
+            <option value="auto">自动</option>
+            <option value="2白1夜">2白1夜</option>
+            <option value="1白2夜">1白2夜</option>
+          </select>
+        </label>
+      ) : null}
     </article>
   );
 }
@@ -131,7 +192,10 @@ export function DoctorPanel({
   onToggleUnavailableDay,
   onChangeTargetDayShifts,
   onAddDoctor,
-  onDeleteDoctor
+  onDeleteDoctor,
+  onToggleUnavailableDayShift,
+  onToggleUnavailableNightShift,
+  onChangePreference
 }: DoctorPanelProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
@@ -168,6 +232,9 @@ export function DoctorPanel({
             onToggleUnavailableDay={onToggleUnavailableDay}
             onChangeTargetDayShifts={onChangeTargetDayShifts}
             onDeleteDoctor={onDeleteDoctor}
+            onToggleUnavailableDayShift={onToggleUnavailableDayShift}
+            onToggleUnavailableNightShift={onToggleUnavailableNightShift}
+            onChangePreference={onChangePreference}
           />
         ))}
       </div>
@@ -189,6 +256,7 @@ export function DoctorPanel({
             >
               <option value="normal">普通医生</option>
               <option value="dayOnly">只白班</option>
+              <option value="nightOnly">只夜班</option>
             </select>
             <button type="button" className="add-doctor-confirm" onClick={handleAdd}>
               确认添加

@@ -1,6 +1,6 @@
 import { createEmptySchedule } from "./rules";
 import { sampleDoctors } from "./sampleData";
-import type { Doctor, V2AppState, WeekArchive } from "./types";
+import type { DayIndex, Doctor, V2AppState, WeekArchive } from "./types";
 
 function getMondayOfWeek(date: Date): string {
   const d = new Date(date);
@@ -28,7 +28,14 @@ export function createDefaultState(): V2AppState {
 }
 
 function cloneDoctor(doctor: Doctor): Doctor {
-  return { ...doctor, unavailableDays: [...doctor.unavailableDays] };
+  const d = doctor as unknown as Record<string, unknown>;
+  return {
+    ...doctor,
+    unavailableDays: [...doctor.unavailableDays],
+    unavailableDayShifts: Array.isArray(d.unavailableDayShifts) ? [...(d.unavailableDayShifts as DayIndex[])] : [],
+    unavailableNightShifts: Array.isArray(d.unavailableNightShifts) ? [...(d.unavailableNightShifts as DayIndex[])] : [],
+    preference: d.preference === "1白2夜" || d.preference === "2白1夜" ? d.preference as "1白2夜" | "2白1夜" : "auto"
+  };
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -38,7 +45,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 function isDoctor(value: unknown): value is Doctor {
   if (!isObject(value)) return false;
   if (typeof value.id !== "string" || typeof value.name !== "string" || typeof value.kind !== "string") return false;
-  if (value.kind !== "normal" && value.kind !== "dayOnly") return false;
+  if (value.kind !== "normal" && value.kind !== "dayOnly" && value.kind !== "nightOnly") return false;
   if (!Array.isArray(value.unavailableDays) || !value.unavailableDays.every((day: unknown) => typeof day === "number" && day >= 0 && day <= 6)) return false;
   if (value.kind === "dayOnly" && value.targetDayShifts !== undefined && value.targetDayShifts !== 2 && value.targetDayShifts !== 3) return false;
   return true;

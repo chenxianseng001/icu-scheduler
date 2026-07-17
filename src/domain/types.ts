@@ -1,5 +1,5 @@
 export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-export type DoctorKind = "normal" | "dayOnly";
+export type DoctorKind = "normal" | "dayOnly" | "nightOnly";
 export type ShiftKey = "day1" | "day2" | "night1" | "night2";
 export type DoctorDayStatus = ShiftKey | "extraDay" | "extraNight" | "offAfterNight" | "rest";
 
@@ -8,6 +8,9 @@ export interface Doctor {
   name: string;
   kind: DoctorKind;
   unavailableDays: DayIndex[];
+  unavailableDayShifts: DayIndex[];
+  unavailableNightShifts: DayIndex[];
+  preference: "auto" | "1白2夜" | "2白1夜";
   targetDayShifts?: 2 | 3;
 }
 
