@@ -82,6 +82,12 @@ export default function App() {
     );
   };
 
+  const renameDoctor = (doctorId: string, name: string) => {
+    updateDoctors((doctors) =>
+      doctors.map((doctor) => (doctor.id === doctorId ? { ...doctor, name } : doctor))
+    );
+  };
+
   const autoSchedule = () => {
     const result = generateSchedule(state.doctors);
     if (result.ok) {
@@ -148,6 +154,7 @@ export default function App() {
             schedule={state.schedule}
             selectedDoctorId={selectedDoctorId}
             onSelectDoctor={setSelectedDoctorId}
+            onRenameDoctor={renameDoctor}
             onToggleUnavailableDay={toggleUnavailableDay}
             onChangeTargetDayShifts={changeTargetDayShifts}
           />

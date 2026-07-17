@@ -7,6 +7,7 @@ interface DoctorPanelProps {
   schedule: WeeklySchedule;
   selectedDoctorId: string | null;
   onSelectDoctor: (doctorId: string) => void;
+  onRenameDoctor: (doctorId: string, name: string) => void;
   onToggleUnavailableDay: (doctorId: string, dayIndex: DayIndex) => void;
   onChangeTargetDayShifts: (doctorId: string, target: 2 | 3) => void;
 }
@@ -16,6 +17,7 @@ interface DoctorCardProps {
   schedule: WeeklySchedule;
   selectedDoctorId: string | null;
   onSelectDoctor: (doctorId: string) => void;
+  onRenameDoctor: (doctorId: string, name: string) => void;
   onToggleUnavailableDay: (doctorId: string, dayIndex: DayIndex) => void;
   onChangeTargetDayShifts: (doctorId: string, target: 2 | 3) => void;
 }
@@ -25,6 +27,7 @@ function DoctorCard({
   schedule,
   selectedDoctorId,
   onSelectDoctor,
+  onRenameDoctor,
   onToggleUnavailableDay,
   onChangeTargetDayShifts
 }: DoctorCardProps) {
@@ -52,15 +55,25 @@ function DoctorCard({
         .filter(Boolean)
         .join(" ")}
     >
-      <button
-        type="button"
-        className="doctor-name"
-        onClick={() => onSelectDoctor(doctor.id)}
-        {...draggable.attributes}
-        {...draggable.listeners}
-      >
-        {doctor.name}
-      </button>
+      <div className="doctor-name-row">
+        <input
+          aria-label={`${doctor.name} 姓名`}
+          className="doctor-name-input"
+          value={doctor.name}
+          onChange={(event) => onRenameDoctor(doctor.id, event.target.value)}
+          onFocus={() => onSelectDoctor(doctor.id)}
+        />
+        <button
+          type="button"
+          className="doctor-drag-handle"
+          aria-label={`拖拽 ${doctor.name}`}
+          onClick={() => onSelectDoctor(doctor.id)}
+          {...draggable.attributes}
+          {...draggable.listeners}
+        >
+          拖
+        </button>
+      </div>
       <div className="doctor-meta">
         <span>{doctor.kind === "dayOnly" ? "只白班" : "普通"}</span>
         <span className={counts.day > dayLimit ? "bad-stat" : ""}>白 {counts.day}/{dayLimit}</span>
@@ -103,6 +116,7 @@ export function DoctorPanel({
   schedule,
   selectedDoctorId,
   onSelectDoctor,
+  onRenameDoctor,
   onToggleUnavailableDay,
   onChangeTargetDayShifts
 }: DoctorPanelProps) {
@@ -120,6 +134,7 @@ export function DoctorPanel({
             schedule={schedule}
             selectedDoctorId={selectedDoctorId}
             onSelectDoctor={onSelectDoctor}
+            onRenameDoctor={onRenameDoctor}
             onToggleUnavailableDay={onToggleUnavailableDay}
             onChangeTargetDayShifts={onChangeTargetDayShifts}
           />
