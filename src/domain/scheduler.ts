@@ -266,42 +266,60 @@ export function generateSchedule(
 
   function balanceNightTiers() {
     const normals = doctors.filter((d) => d.kind === "normal");
-    for (const doctor of normals) {
-      let n1Days: number[] = [];
-      let n2Days: number[] = [];
-      for (let d = 0; d < 7; d++) {
-        if (schedule.days[d].assignments.night1 === doctor.id) n1Days.push(d);
-        if (schedule.days[d].assignments.night2 === doctor.id) n2Days.push(d);
-      }
-      // If this doctor has 2 night1 and 0 night2
-      if (n1Days.length >= 2 && n2Days.length === 0) {
-        // Find another normal with 0 night1 and ≥1 night2
+    let improved = true;
+    // Keep trying swaps until no more improvements possible
+    while (improved) {
+      improved = false;
+      for (const doctor of normals) {
+        let n1: number[] = [], n2: number[] = [];
+        for (let d = 0; d < 7; d++) {
+          if (schedule.days[d].assignments.night1 === doctor.id) n1.push(d);
+          if (schedule.days[d].assignments.night2 === doctor.id) n2.push(d);
+        }
+        // Skip if already balanced (0/0, 1/0, 0/1, or 1/1)
+        if (!((n1.length >= 2 && n2.length === 0) || (n2.length >= 2 && n1.length === 0))) continue;
+
+        const needN2 = n1.length >= 2; // This doctor needs a night2, has too many night1
         for (const other of normals) {
           if (other.id === doctor.id) continue;
-          let oN1: number[] = [];
-          let oN2: number[] = [];
+          let oN1: number[] = [], oN2: number[] = [];
           for (let d = 0; d < 7; d++) {
             if (schedule.days[d].assignments.night1 === other.id) oN1.push(d);
             if (schedule.days[d].assignments.night2 === other.id) oN2.push(d);
           }
-          if (oN1.length === 0 && oN2.length >= 1) {
-            // Try swap: move doctor's night1 to other, other's night2 to doctor
-            for (const n1Day of n1Days) {
-              for (const n2Day of oN2) {
-                // Check if swap would be valid (different days, both free on the other shift)
-                if (n1Day === n2Day) continue;
-                if (schedule.days[n1Day].assignments.night2 !== null) continue;
-                if (schedule.days[n2Day].assignments.night1 !== null) continue;
-                // Check that neither would have 2 of same shift after swap
-                // Execute swap
-                schedule.days[n1Day].assignments.night1 = other.id;
-                schedule.days[n1Day].assignments.night2 = doctor.id;
-                schedule.days[n2Day].assignments.night1 = doctor.id;
-                schedule.days[n2Day].assignments.night2 = other.id;
-                return; // One swap is enough
-              }
+          // Other must have the OPPOSITE imbalance (too many of what we need, lacking what we have)
+          const otherHasOpposite = needN2
+            ? (oN2.length >= 1 && oN1.length === 0)   // other has spare night2, needs night1
+            : (oN1.length >= 1 && oN2.length === 0);  // other has spare night1, needs night2
+          if (!otherHasOpposite) continue;
+
+          const srcDays = needN2 ? n1 : n2;    // days to take from doctor
+          const tgtDays = needN2 ? oN2 : oN1;  // days to take from other
+          for (const sd of srcDays) {
+            for (const td of tgtDays) {
+              if (sd === td) continue;
+              if (schedule.days[sd].assignments.night2 !== null) continue;
+              if (schedule.days[td].assignments.night1 !== null) continue;
+              // Also ensure this won't leave the swapper with 2 of the same
+              // After swap: doctor gives up sd(needN2?night1:night2), gets td(needN2?night2:night1)
+              // other gives up td, gets sd
+              // Check that after swap, neither ends up with 2 of same type
+              const doctorN1After = needN2 ? n1.filter(x => x !== sd).length : n1.length + 1;
+              const doctorN2After = needN2 ? n2.length + 1 : n2.filter(x => x !== sd).length;
+              const otherN1After = needN2 ? oN1.length + 1 : oN1.filter(x => x !== td).length;
+              const otherN2After = needN2 ? oN2.filter(x => x !== td).length : oN2.length + 1;
+              if (doctorN1After > 2 || doctorN2After > 2 || otherN1After > 2 || otherN2After > 2) continue;
+
+              schedule.days[sd].assignments.night1 = other.id;
+              schedule.days[sd].assignments.night2 = doctor.id;
+              schedule.days[td].assignments.night1 = doctor.id;
+              schedule.days[td].assignments.night2 = other.id;
+              improved = true;
+              break;
             }
+            if (improved) break;
           }
+          if (improved) break;
         }
       }
     }
