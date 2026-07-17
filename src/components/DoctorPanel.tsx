@@ -49,10 +49,12 @@ function DoctorCard({
   onChangeTargetNightShifts
 }: DoctorCardProps) {
   const counts = getDoctorCounts(schedule, doctor.id);
-  const totalLimit = doctor.kind === "dayOnly" ? doctor.targetDayShifts ?? 2 : 3;
+  const totalLimit = doctor.kind === "dayOnly" ? doctor.targetDayShifts ?? 2
+    : doctor.kind === "nightOnly" ? doctor.targetNightShifts ?? 2 : 3;
   const dayLimit = doctor.kind === "dayOnly" ? doctor.targetDayShifts ?? 2
     : doctor.kind === "nightOnly" ? 0 : 2;
-  const nightLimit = doctor.kind === "nightOnly" ? 2 : doctor.kind === "dayOnly" ? 0 : 2;
+  const nightLimit = doctor.kind === "nightOnly" ? doctor.targetNightShifts ?? 2
+    : doctor.kind === "dayOnly" ? 0 : 2;
   const overLimit = counts.total > totalLimit || counts.day > dayLimit || counts.night > nightLimit;
   const draggable = useDraggable({ id: `doctor:${doctor.id}` });
 
