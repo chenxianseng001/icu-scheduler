@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import "./App.css";
 import { DoctorPanel } from "./components/DoctorPanel";
 import { IssuePanel } from "./components/IssuePanel";
@@ -15,6 +15,7 @@ export default function App() {
   const [state, setState] = useState<AppState>(() => loadAppState());
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [schedulerMessage, setSchedulerMessage] = useState<string | null>(null);
+  const [activeDragDoctorId, setActiveDragDoctorId] = useState<string | null>(null);
 
   const issues = useMemo(
     () => validateSchedule(state.schedule, state.doctors, { requireFilledPositions: true }),
@@ -125,9 +126,17 @@ export default function App() {
     exportWorkbook(state, issues);
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeId = String(event.active.id);
+    if (activeId.startsWith("doctor:")) {
+      setActiveDragDoctorId(activeId.replace("doctor:", ""));
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const activeId = String(event.active.id);
     const overId = event.over ? String(event.over.id) : "";
+    setActiveDragDoctorId(null);
 
     if (!activeId.startsWith("doctor:") || !overId.startsWith("cell:")) {
       return;
@@ -138,6 +147,14 @@ export default function App() {
     assignDoctor(Number(dayIndexText) as DayIndex, shiftKey as ShiftKey, doctorId);
   };
 
+  const handleDragCancel = () => {
+    setActiveDragDoctorId(null);
+  };
+
+  const activeDragDoctor = activeDragDoctorId
+    ? state.doctors.find((doctor) => doctor.id === activeDragDoctorId)
+    : undefined;
+
   return (
     <main className="app-shell">
       <Toolbar
@@ -147,7 +164,7 @@ export default function App() {
         onExport={exportSchedule}
         onNewWeek={newWeek}
       />
-      <DndContext onDragEnd={handleDragEnd}>
+      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
         <div className="workspace">
           <DoctorPanel
             doctors={state.doctors}
@@ -167,6 +184,9 @@ export default function App() {
           />
           <IssuePanel issues={issues} schedulerMessage={schedulerMessage} />
         </div>
+        <DragOverlay>
+          {activeDragDoctor ? <div className="drag-overlay-card">{activeDragDoctor.name}</div> : null}
+        </DragOverlay>
       </DndContext>
     </main>
   );

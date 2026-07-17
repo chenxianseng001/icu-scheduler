@@ -37,19 +37,14 @@ function DoctorCard({
   const nightLimit = doctor.kind === "dayOnly" ? 0 : 2;
   const overLimit = counts.total > totalLimit || counts.day > dayLimit || counts.night > nightLimit;
   const draggable = useDraggable({ id: `doctor:${doctor.id}` });
-  const style = draggable.transform
-    ? {
-        transform: `translate3d(${draggable.transform.x}px, ${draggable.transform.y}px, 0)`
-      }
-    : undefined;
 
   return (
     <article
       ref={draggable.setNodeRef}
-      style={style}
       className={[
         "doctor-card",
         selectedDoctorId === doctor.id ? "selected" : "",
+        draggable.isDragging ? "dragging-source" : "",
         overLimit ? "over-limit" : ""
       ]
         .filter(Boolean)

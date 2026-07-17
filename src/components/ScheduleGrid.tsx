@@ -46,20 +46,42 @@ function ScheduleCell({
   const droppable = useDroppable({ id: `cell:${dayIndex}:${shiftKey}` });
 
   return (
-    <button
+    <div
       ref={droppable.setNodeRef}
-      type="button"
-      className={["shift-cell", isFilled ? "filled" : "empty", hasIssue ? "issue-cell" : ""]
+      className={[
+        "shift-cell",
+        isFilled ? "filled" : "empty",
+        hasIssue ? "issue-cell" : "",
+        droppable.isOver ? "drop-target" : ""
+      ]
         .filter(Boolean)
         .join(" ")}
-      onClick={() => onAssign(dayIndex, shiftKey, selectedDoctorId)}
       onContextMenu={(event) => {
         event.preventDefault();
         onAssign(dayIndex, shiftKey, null);
       }}
     >
-      {doctorName || "缺人"}
-    </button>
+      <button
+        type="button"
+        className="cell-assign-button"
+        onClick={() => onAssign(dayIndex, shiftKey, selectedDoctorId)}
+      >
+        {doctorName || "缺人"}
+      </button>
+      {doctorName ? (
+        <button
+          type="button"
+          className="cell-clear-button"
+          aria-label={`清除 ${dayLabels[dayIndex]} ${shiftLabels[shiftKey]} ${doctorName}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAssign(dayIndex, shiftKey, null);
+          }}
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
   );
 }
 

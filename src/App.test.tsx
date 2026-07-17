@@ -1,7 +1,12 @@
 import React from "react";
+import { beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
+
+beforeEach(() => {
+  localStorage.clear();
+});
 
 it("renders the scheduler title", () => {
   render(<App />);
@@ -31,4 +36,18 @@ it("allows editing doctor names", async () => {
 
   expect(screen.getByDisplayValue("孙医生")).toBeInTheDocument();
   expect(screen.queryByDisplayValue("王医生")).not.toBeInTheDocument();
+});
+
+it("allows clearing one assigned shift without clearing the whole week", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByDisplayValue("王医生"));
+  await user.click(screen.getAllByRole("button", { name: "缺人" })[0]);
+
+  expect(screen.getByRole("button", { name: "王医生" })).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "清除 周一 白1 王医生" }));
+
+  expect(screen.getAllByRole("button", { name: "缺人" })[0]).toBeInTheDocument();
 });
