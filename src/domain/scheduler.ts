@@ -27,7 +27,8 @@ function getCounts(doctors: Doctor[]) {
 
 function maxNightsForDoctor(doctor: Doctor, previousWeek?: WeekArchive): number {
   if (doctor.kind === "dayOnly") return 0;
-  if (!previousWeek) return 2;
+  const target = doctor.kind === "nightOnly" ? (doctor.targetNightShifts ?? 2) : 2;
+  if (!previousWeek) return target;
 
   let prevNights = 0;
   for (const day of previousWeek.schedule.days) {
@@ -36,7 +37,7 @@ function maxNightsForDoctor(doctor: Doctor, previousWeek?: WeekArchive): number 
     }
     if (day.extraNight.includes(doctor.id)) prevNights++;
   }
-  return prevNights >= 2 ? 1 : 2;
+  return prevNights >= target ? Math.max(1, target - 1) : target;
 }
 
 function hadSaturdayNight(doctorId: string, previousWeek?: WeekArchive): boolean {

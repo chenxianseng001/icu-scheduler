@@ -96,9 +96,15 @@ export default function App() {
     );
   };
 
-  const changeTargetDayShifts = (doctorId: string, targetDayShifts: 2 | 3) => {
+  const changeTargetDayShifts = (doctorId: string, targetDayShifts: 1 | 2 | 3) => {
     updateDoctors((doctors) =>
       doctors.map((doctor) => (doctor.id === doctorId ? { ...doctor, targetDayShifts } : doctor))
+    );
+  };
+
+  const changeTargetNightShifts = (doctorId: string, targetNightShifts: 1 | 2 | 3) => {
+    updateDoctors((doctors) =>
+      doctors.map((doctor) => (doctor.id === doctorId ? { ...doctor, targetNightShifts } : doctor))
     );
   };
 
@@ -144,7 +150,8 @@ export default function App() {
       unavailableDayShifts: [],
       unavailableNightShifts: [],
       preference: "auto",
-      ...(kind === "dayOnly" ? { targetDayShifts: 2 as const } : {})
+      ...(kind === "dayOnly" ? { targetDayShifts: 2 as const } : {}),
+      ...(kind === "nightOnly" ? { targetNightShifts: 2 as const } : {})
     };
     updateDoctors((doctors) => [...doctors, newDoctor]);
   };
@@ -317,6 +324,7 @@ export default function App() {
             onToggleUnavailableDayShift={toggleUnavailableDayShift}
             onToggleUnavailableNightShift={toggleUnavailableNightShift}
             onChangePreference={changePreference}
+            onChangeTargetNightShifts={changeTargetNightShifts}
           />
           <div className="middle-column">
             <ScheduleGrid

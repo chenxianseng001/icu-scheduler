@@ -47,7 +47,8 @@ function isDoctor(value: unknown): value is Doctor {
   if (typeof value.id !== "string" || typeof value.name !== "string" || typeof value.kind !== "string") return false;
   if (value.kind !== "normal" && value.kind !== "dayOnly" && value.kind !== "nightOnly") return false;
   if (!Array.isArray(value.unavailableDays) || !value.unavailableDays.every((day: unknown) => typeof day === "number" && day >= 0 && day <= 6)) return false;
-  if (value.kind === "dayOnly" && value.targetDayShifts !== undefined && value.targetDayShifts !== 2 && value.targetDayShifts !== 3) return false;
+  if (value.kind === "dayOnly" && value.targetDayShifts !== undefined && (value.targetDayShifts as number) < 1) return false;
+  if (value.kind === "nightOnly" && value.targetNightShifts !== undefined && (value.targetNightShifts as number) < 1) return false;
   return true;
 }
 

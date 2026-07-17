@@ -11,7 +11,8 @@ export interface Doctor {
   unavailableDayShifts: DayIndex[];
   unavailableNightShifts: DayIndex[];
   preference: "auto" | "1白2夜" | "2白1夜";
-  targetDayShifts?: 2 | 3;
+  targetDayShifts?: 1 | 2 | 3;
+  targetNightShifts?: 1 | 2 | 3;
 }
 
 export interface DaySchedule {
