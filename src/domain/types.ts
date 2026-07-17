@@ -20,6 +20,11 @@ export interface WeeklySchedule {
   days: DaySchedule[];
 }
 
+export interface AppState {
+  doctors: Doctor[];
+  schedule: WeeklySchedule;
+}
+
 export interface DoctorCounts {
   day: number;
   night: number;
