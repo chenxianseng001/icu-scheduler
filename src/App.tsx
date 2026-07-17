@@ -217,20 +217,22 @@ export default function App() {
   };
 
   const autoSchedule = () => {
+    setSchedulerMessage("排班中…");
     const latestArchive = state.archives.length > 0
       ? [...state.archives].sort((a, b) => b.archivedAt.localeCompare(a.archivedAt))[0]
       : undefined;
-    const result = generateSchedule(state.doctors, latestArchive);
-    if (result.ok) {
-      setState((current) => ({
-        ...current,
-        schedule: result.schedule
-      }));
-      setSchedulerMessage("已生成一版合法排班");
-      return;
-    }
-
-    setSchedulerMessage(result.message);
+    setTimeout(() => {
+      const result = generateSchedule(state.doctors, latestArchive);
+      if (result.ok) {
+        setState((current) => ({
+          ...current,
+          schedule: result.schedule
+        }));
+        setSchedulerMessage("已生成一版合法排班");
+        return;
+      }
+      setSchedulerMessage(result.message);
+    }, 50);
   };
 
   const clearSchedule = () => {

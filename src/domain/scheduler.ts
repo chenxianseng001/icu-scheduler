@@ -48,6 +48,8 @@ function hadSaturdayNight(doctorId: string, previousWeek?: WeekArchive): boolean
     sat.extraNight.includes(doctorId);
 }
 
+const SCHEDULER_TIMEOUT_MS = 15000;
+
 export function generateSchedule(
   doctors: Doctor[],
   previousWeek?: WeekArchive
@@ -55,6 +57,7 @@ export function generateSchedule(
   const schedule = createEmptySchedule();
   const counts = getCounts(doctors);
   const requiredAssignments = schedule.days.length * shiftOrder.length;
+  const deadline = Date.now() + SCHEDULER_TIMEOUT_MS;
 
   const maximumAssignments = doctors.reduce((total, doctor) => {
     if (doctor.kind === "dayOnly") return total + (doctor.targetDayShifts ?? 2);
@@ -227,6 +230,8 @@ export function generateSchedule(
   }
 
   function search(position: number): boolean {
+    if (Date.now() > deadline) return false;
+
     if (position === requiredAssignments) {
       return targetsMet() && validateSchedule(schedule, doctors, { requireFilledPositions: true }).length === 0;
     }
