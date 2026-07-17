@@ -63,9 +63,11 @@ it("does not assign a night doctor on the following day", () => {
       result.schedule.days[dayIndex - 1].assignments.night1,
       result.schedule.days[dayIndex - 1].assignments.night2
     ];
-    expect(Object.values(result.schedule.days[dayIndex].assignments)).not.toEqual(
-      expect.arrayContaining(previousNightDoctors)
-    );
+    const currentDayDoctors = Object.values(result.schedule.days[dayIndex].assignments);
+
+    for (const doctorId of previousNightDoctors) {
+      expect(currentDayDoctors).not.toContain(doctorId);
+    }
   }
 });
 
