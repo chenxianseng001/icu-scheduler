@@ -31,7 +31,7 @@ it("creates date, doctor, and issue sheets when issues are present", () => {
 
   const workbook = buildWorkbook(state, issues);
 
-  expect(workbook.SheetNames).toEqual(["按日期查看", "按医生查看", "问题列表"]);
+  expect(workbook.SheetNames).toEqual(["按医生查看", "问题列表"]);
 });
 
 it("exports the workbook as ICU排班.xlsx", () => {

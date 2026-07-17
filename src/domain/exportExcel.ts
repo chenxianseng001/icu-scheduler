@@ -58,7 +58,6 @@ function buildIssueRows(state: AppState, issues: ScheduleIssue[]) {
 export function buildWorkbook(state: AppState, issues: ScheduleIssue[]): XLSX.WorkBook {
   const workbook = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(buildDateRows(state)), "按日期查看");
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(buildDoctorRows(state)), "按医生查看");
 
   if (issues.length > 0) {
