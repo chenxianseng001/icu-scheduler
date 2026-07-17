@@ -229,29 +229,8 @@ export function generateSchedule(
         return leftSameKind - rightSameKind;
       }
 
-      return left.name.localeCompare(right.name) || left.id.localeCompare(right.id);
+      return left.name.localeCompare(right.name) || (Math.random() - 0.5);
     });
-
-    // Shuffle candidates with equal priority to produce different schedules each run
-    if (candidates.length > 1) {
-      for (let i = candidates.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-      }
-      // Re-sort to restore priority order, but random within ties
-      candidates.sort((a, b) => {
-        const aCounts = counts.get(a.id)!;
-        const bCounts = counts.get(b.id)!;
-        const aPref = (isNightShift && a.preference === "1白2夜") || (!isNightShift && a.preference === "2白1夜") ? 0 : 1;
-        const bPref = (isNightShift && b.preference === "1白2夜") || (!isNightShift && b.preference === "2白1夜") ? 0 : 1;
-        if (aPref !== bPref) return aPref - bPref;
-        if (aCounts.total !== bCounts.total) return aCounts.total - bCounts.total;
-        const aSame = isNightShift ? aCounts.night : aCounts.day;
-        const bSame = isNightShift ? bCounts.night : bCounts.day;
-        if (aSame !== bSame) return aSame - bSame;
-        return Math.random() - 0.5; // random within ties
-      });
-    }
   }
 
   function assign(doctor: Doctor, dayIndex: number, shiftKey: ShiftKey) {
@@ -308,11 +287,16 @@ export function generateSchedule(
             if (schedule.days[d].assignments.night1 === other.id) oN1.push(d);
             if (schedule.days[d].assignments.night2 === other.id) oN2.push(d);
           }
-          // Other must have the OPPOSITE imbalance (too many of what we need, lacking what we have)
-          const otherHasOpposite = needN2
-            ? (oN2.length >= 1 && oN1.length === 0)   // other has spare night2, needs night1
-            : (oN1.length >= 1 && oN2.length === 0);  // other has spare night1, needs night2
-          if (!otherHasOpposite) continue;
+          // Other must have at least one of what we need, and not too many of what we'd give
+          const doctorN1Count = needN2 ? n1.length : n1.length + 1;
+          const doctorN2Count = needN2 ? n2.length + 1 : n2.length;
+          const otherN1Count = needN2 ? oN1.length + 1 : oN1.length;
+          const otherN2Count = needN2 ? oN2.length : oN2.length + 1;
+          
+          const otherCanHelp = needN2
+            ? (oN2.length >= 1 && otherN1Count <= 2)   // other has spare night2 and won't exceed 2 night1
+            : (oN1.length >= 1 && otherN2Count <= 2);  // other has spare night1 and won't exceed 2 night2
+          if (!otherCanHelp) continue;
 
           const srcDays = needN2 ? n1 : n2;    // days to take from doctor
           const tgtDays = needN2 ? oN2 : oN1;  // days to take from other
