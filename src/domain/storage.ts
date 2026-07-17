@@ -85,7 +85,13 @@ export function loadAppState(): AppState {
     return createDefaultState();
   }
 
-  const raw = storage.getItem(STORAGE_KEY);
+  let raw: string | null;
+  try {
+    raw = storage.getItem(STORAGE_KEY);
+  } catch {
+    return createDefaultState();
+  }
+
   if (!raw) {
     return createDefaultState();
   }
@@ -116,5 +122,9 @@ export function saveAppState(state: AppState): void {
     return;
   }
 
-  storage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    storage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    return;
+  }
 }

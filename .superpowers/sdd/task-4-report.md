@@ -30,3 +30,14 @@ Implemented browser persistence and client-side Excel export for the ICU schedul
 ## Concerns
 
 - None for Task 4.
+
+## Fix Update - Storage Resilience
+
+- Wrapped `localStorage.getItem()` in `src/domain/storage.ts` so `loadAppState()` falls back to the default app state if storage reads throw.
+- Wrapped `localStorage.setItem()` so `saveAppState()` ignores storage write failures instead of crashing.
+- Added focused regression tests for throwing `getItem` and `setItem`.
+
+## Verification
+
+- `npm test -- src/domain/storage.test.ts`
+- `npm run build`
