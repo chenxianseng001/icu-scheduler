@@ -175,6 +175,12 @@ export function generateSchedule(
       }
     }
 
+    // Fisher-Yates shuffle for randomness before sorting
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
     return candidates.sort((left, right) => {
       const leftCounts = counts.get(left.id)!;
       const rightCounts = counts.get(right.id)!;
@@ -229,7 +235,7 @@ export function generateSchedule(
         return leftSameKind - rightSameKind;
       }
 
-      return left.name.localeCompare(right.name) || (Math.random() - 0.5);
+      return Math.random() - 0.5;
     });
   }
 
