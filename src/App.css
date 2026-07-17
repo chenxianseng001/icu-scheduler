@@ -473,7 +473,6 @@ select {
 }
 
 .issue-panel {
-  grid-row: 1;
   max-height: calc(100vh - 98px);
   overflow: auto;
 }
@@ -510,7 +509,6 @@ select {
 }
 
 .status-table-panel {
-  grid-column: 2;
 }
 
 .status-table-wrapper {
@@ -585,7 +583,6 @@ select {
 }
 
 .stats-panel {
-  grid-column: 2;
 }
 
 .stats-filter {

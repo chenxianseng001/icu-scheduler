@@ -74,6 +74,7 @@ function isArchive(value: unknown): value is WeekArchive {
   if (!isObject(value)) return false;
   if (typeof value.weekStart !== "string") return false;
   if (typeof value.archivedAt !== "string") return false;
+  if (!Array.isArray(value.doctors) || !value.doctors.every(isDoctor)) return false;
   return isSchedule(value.schedule);
 }
 
@@ -155,6 +156,7 @@ export function saveState(state: V2AppState): void {
 export function archiveCurrentWeek(state: V2AppState): V2AppState {
   const archive: WeekArchive = {
     weekStart: state.weekStart,
+    doctors: state.doctors.map(cloneDoctor),
     schedule: state.schedule,
     archivedAt: new Date().toISOString()
   };

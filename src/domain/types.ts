@@ -27,6 +27,7 @@ export interface AppState {
 
 export interface WeekArchive {
   weekStart: string;
+  doctors: Doctor[];
   schedule: WeeklySchedule;
   archivedAt: string;
 }

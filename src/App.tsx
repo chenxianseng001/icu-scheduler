@@ -4,6 +4,7 @@ import "./App.css";
 import { DoctorPanel } from "./components/DoctorPanel";
 import { DoctorStatusTable } from "./components/DoctorStatusTable";
 import { IssuePanel } from "./components/IssuePanel";
+import { PreviousWeekPanel } from "./components/PreviousWeekPanel";
 import { ScheduleGrid } from "./components/ScheduleGrid";
 import { StatisticsPanel } from "./components/StatisticsPanel";
 import { Toolbar } from "./components/Toolbar";
@@ -223,19 +224,22 @@ export default function App() {
             onAddDoctor={addDoctor}
             onDeleteDoctor={deleteDoctor}
           />
-          <ScheduleGrid
-            doctors={state.doctors}
-            issues={issues}
-            schedule={state.schedule}
-            selectedDoctorId={selectedDoctorId}
-            onAssign={assignDoctor}
-          />
-          <DoctorStatusTable
-            doctors={state.doctors}
-            schedule={state.schedule}
-            issues={issues}
-          />
-          <StatisticsPanel state={state} />
+          <div className="middle-column">
+            <ScheduleGrid
+              doctors={state.doctors}
+              issues={issues}
+              schedule={state.schedule}
+              selectedDoctorId={selectedDoctorId}
+              onAssign={assignDoctor}
+            />
+            <DoctorStatusTable
+              doctors={state.doctors}
+              schedule={state.schedule}
+              issues={issues}
+            />
+            <PreviousWeekPanel state={state} />
+            <StatisticsPanel state={state} />
+          </div>
           <IssuePanel issues={issues} schedulerMessage={schedulerMessage} />
         </div>
         <DragOverlay>
