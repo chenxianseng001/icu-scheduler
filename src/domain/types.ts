@@ -1,0 +1,48 @@
+export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type DoctorKind = "normal" | "dayOnly";
+export type ShiftKey = "day1" | "day2" | "night1" | "night2";
+export type DoctorDayStatus = ShiftKey | "offAfterNight" | "rest";
+
+export interface Doctor {
+  id: string;
+  name: string;
+  kind: DoctorKind;
+  unavailableDays: DayIndex[];
+  targetDayShifts?: 2 | 3;
+}
+
+export interface DaySchedule {
+  dayIndex: DayIndex;
+  assignments: Record<ShiftKey, string | null>;
+}
+
+export interface WeeklySchedule {
+  days: DaySchedule[];
+}
+
+export interface DoctorCounts {
+  day: number;
+  night: number;
+  total: number;
+}
+
+export type ScheduleIssueType =
+  | "missingPosition"
+  | "sameDayMultipleAssignments"
+  | "unavailableAssignment"
+  | "nightRecoveryConflict"
+  | "normalDoctorOverLimit"
+  | "dayOnlyDoctorOnNight"
+  | "dayOnlyTargetNotMet";
+
+export interface ScheduleIssue {
+  type: ScheduleIssueType;
+  message: string;
+  doctorId?: string;
+  dayIndex?: DayIndex;
+  shiftKey?: ShiftKey;
+}
+
+export interface ScheduleValidationOptions {
+  requireFilledPositions?: boolean;
+}

@@ -1,0 +1,248 @@
+import type {
+  DayIndex,
+  Doctor,
+  DoctorCounts,
+  DoctorDayStatus,
+  ScheduleIssue,
+  ScheduleValidationOptions,
+  ShiftKey,
+  WeeklySchedule
+} from "./types";
+
+export const shiftLabels = {
+  day1: "白1",
+  day2: "白2",
+  night1: "夜1",
+  night2: "夜2"
+} as const;
+
+export const dayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
+
+const shiftKeys: ShiftKey[] = ["day1", "day2", "night1", "night2"];
+const dayShiftKeys: ShiftKey[] = ["day1", "day2"];
+const nightShiftKeys: ShiftKey[] = ["night1", "night2"];
+
+const MAX_NORMAL_TOTAL_SHIFTS = 3;
+const MAX_NORMAL_DAY_SHIFTS = 2;
+const MAX_NORMAL_NIGHT_SHIFTS = 2;
+
+function createEmptyAssignments() {
+  return {
+    day1: null,
+    day2: null,
+    night1: null,
+    night2: null
+  } as const;
+}
+
+function getDoctorById(doctors: Doctor[], doctorId: string) {
+  return doctors.find((doctor) => doctor.id === doctorId);
+}
+
+function isNightShift(shiftKey: ShiftKey) {
+  return shiftKey === "night1" || shiftKey === "night2";
+}
+
+export function createEmptySchedule(): WeeklySchedule {
+  return {
+    days: Array.from({ length: 7 }, (_, dayIndex) => ({
+      dayIndex: dayIndex as DayIndex,
+      assignments: { ...createEmptyAssignments() }
+    }))
+  };
+}
+
+export function getDoctorCounts(schedule: WeeklySchedule, doctorId: string): DoctorCounts {
+  let day = 0;
+  let night = 0;
+
+  for (const scheduleDay of schedule.days) {
+    for (const shiftKey of shiftKeys) {
+      if (scheduleDay.assignments[shiftKey] !== doctorId) {
+        continue;
+      }
+
+      if (isNightShift(shiftKey)) {
+        night += 1;
+      } else {
+        day += 1;
+      }
+    }
+  }
+
+  return {
+    day,
+    night,
+    total: day + night
+  };
+}
+
+export function getDoctorDayStatus(
+  schedule: WeeklySchedule,
+  doctorId: string,
+  day: DayIndex
+): DoctorDayStatus {
+  const scheduleDay = schedule.days[day];
+  if (!scheduleDay) {
+    return "rest";
+  }
+
+  for (const shiftKey of shiftKeys) {
+    if (scheduleDay.assignments[shiftKey] === doctorId) {
+      return shiftKey;
+    }
+  }
+
+  if (day > 0) {
+    const previousDay = schedule.days[day - 1];
+    if (
+      previousDay &&
+      nightShiftKeys.some((shiftKey) => previousDay.assignments[shiftKey] === doctorId)
+    ) {
+      return "offAfterNight";
+    }
+  }
+
+  return "rest";
+}
+
+export function validateSchedule(
+  schedule: WeeklySchedule,
+  doctors: Doctor[],
+  options: ScheduleValidationOptions
+): ScheduleIssue[] {
+  const issues: ScheduleIssue[] = [];
+
+  for (const daySchedule of schedule.days) {
+    for (const shiftKey of shiftKeys) {
+      const doctorId = daySchedule.assignments[shiftKey];
+
+      if (!doctorId) {
+        if (options.requireFilledPositions) {
+          issues.push({
+            type: "missingPosition",
+            message: `${dayLabels[daySchedule.dayIndex]} ${shiftLabels[shiftKey]} 缺少排班`,
+            dayIndex: daySchedule.dayIndex,
+            shiftKey
+          });
+        }
+        continue;
+      }
+
+      const doctor = getDoctorById(doctors, doctorId);
+      if (!doctor) {
+        continue;
+      }
+
+      if (doctor.kind === "dayOnly" && isNightShift(shiftKey)) {
+        issues.push({
+          type: "dayOnlyDoctorOnNight",
+          message: `${doctor.name} 不能排夜班`,
+          doctorId,
+          dayIndex: daySchedule.dayIndex,
+          shiftKey
+        });
+      }
+
+      if (doctor.unavailableDays.includes(daySchedule.dayIndex)) {
+        issues.push({
+          type: "unavailableAssignment",
+          message: `${doctor.name} 在 ${dayLabels[daySchedule.dayIndex]} 不可排班`,
+          doctorId,
+          dayIndex: daySchedule.dayIndex,
+          shiftKey
+        });
+      }
+    }
+  }
+
+  for (const daySchedule of schedule.days) {
+    const assignedDoctorsByShift = new Map<string, ShiftKey[]>();
+
+    for (const shiftKey of shiftKeys) {
+      const doctorId = daySchedule.assignments[shiftKey];
+      if (!doctorId) {
+        continue;
+      }
+
+      const currentShifts = assignedDoctorsByShift.get(doctorId) ?? [];
+      currentShifts.push(shiftKey);
+      assignedDoctorsByShift.set(doctorId, currentShifts);
+    }
+
+    for (const [doctorId, doctorShifts] of assignedDoctorsByShift.entries()) {
+      if (doctorShifts.length <= 1) {
+        continue;
+      }
+
+      issues.push({
+        type: "sameDayMultipleAssignments",
+        message: `${doctorId} 在 ${dayLabels[daySchedule.dayIndex]} 被安排了多个班次`,
+        doctorId,
+        dayIndex: daySchedule.dayIndex
+      });
+    }
+  }
+
+  for (const doctor of doctors) {
+    const counts = getDoctorCounts(schedule, doctor.id);
+
+    for (const daySchedule of schedule.days) {
+      const status = getDoctorDayStatus(schedule, doctor.id, daySchedule.dayIndex);
+      if (status === "rest" || status === "offAfterNight") {
+        continue;
+      }
+
+      const previousDay = daySchedule.dayIndex > 0 ? schedule.days[daySchedule.dayIndex - 1] : undefined;
+      if (
+        previousDay &&
+        nightShiftKeys.some((shiftKey) => previousDay.assignments[shiftKey] === doctor.id)
+      ) {
+        issues.push({
+          type: "nightRecoveryConflict",
+          message: `${doctor.name} 在夜班后次日仍有排班`,
+          doctorId: doctor.id,
+          dayIndex: daySchedule.dayIndex
+        });
+      }
+    }
+
+    if (doctor.kind === "normal") {
+      if (counts.total > MAX_NORMAL_TOTAL_SHIFTS) {
+        issues.push({
+          type: "normalDoctorOverLimit",
+          message: `${doctor.name} 总班次数超过 ${MAX_NORMAL_TOTAL_SHIFTS}`,
+          doctorId: doctor.id
+        });
+      }
+
+      if (counts.day > MAX_NORMAL_DAY_SHIFTS) {
+        issues.push({
+          type: "normalDoctorOverLimit",
+          message: `${doctor.name} 白班次数超过 ${MAX_NORMAL_DAY_SHIFTS}`,
+          doctorId: doctor.id
+        });
+      }
+
+      if (counts.night > MAX_NORMAL_NIGHT_SHIFTS) {
+        issues.push({
+          type: "normalDoctorOverLimit",
+          message: `${doctor.name} 夜班次数超过 ${MAX_NORMAL_NIGHT_SHIFTS}`,
+          doctorId: doctor.id
+        });
+      }
+    }
+
+    if (doctor.kind === "dayOnly" && typeof doctor.targetDayShifts === "number") {
+      if (counts.day !== doctor.targetDayShifts) {
+        issues.push({
+          type: "dayOnlyTargetNotMet",
+          message: `${doctor.name} 白班目标为 ${doctor.targetDayShifts}，当前为 ${counts.day}`,
+          doctorId: doctor.id
+        });
+      }
+    }
+  }
+
+  return issues;
+}
